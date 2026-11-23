@@ -1,0 +1,3152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#07040f">
+    <meta name="description" content="MARO GAMES PRO - لعبة جماعية عربية للتخمين والمرح بدون اتصال بالإنترنت.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>اقفش اللي برا يا حلو - MARO GAMES PRO v6.1</title>
+    <style>
+        /* ==========================================
+           1. RESET & SYSTEM CORE SETUP
+           ========================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --neon-magenta: #ff007f;
+            --neon-purple: #7928ca;
+            --neon-cyan: #00dfd8;
+            --neon-gold: #ffca28;
+            --bg-dark: #07040f;
+            --card-glass: rgba(22, 14, 38, 0.85);
+            --card-border: rgba(255, 255, 255, 0.18);
+            --glow-magenta: 0 0 30px rgba(255, 0, 127, 0.6);
+            --glow-cyan: 0 0 30px rgba(0, 223, 216, 0.6);
+            --glow-gold: 0 0 30px rgba(255, 202, 40, 0.6);
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            direction: rtl;
+        }
+
+        /* ==========================================
+           2. CINEMATIC GAMING BACKGROUND & NEON STARS
+           ========================================== */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.95), inset 0 0 80px rgba(121, 40, 202, 0.3);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ==========================================
+           3. APP CONTAINER & SCREEN MANAGING (16:9 RATIO OPTIMIZED)
+           ========================================== */
+        #app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 450px;
+            aspect-ratio: 9 / 16;
+            max-height: 100vh;
+            margin: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95) translateY(10px);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            z-index: 5;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            z-index: 20;
+        }
+
+        .screen::-webkit-scrollbar { display: none; }
+        .screen { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ==========================================
+           4. UI COMPONENTS & HAMBURGER MENU
+           ========================================== */
+        .header-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .hamburger-btn {
+            background: var(--card-glass);
+            border: 1px solid var(--card-border);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+            z-index: 50;
+        }
+
+        .hamburger-btn span {
+            display: block;
+            width: 18px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
+        .hamburger-btn:active { transform: scale(0.92); }
+
+        /* Side Drawer Menu */
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100%;
+            background: rgba(12, 7, 26, 0.98);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 10000;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.8);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 25px 20px;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .side-drawer.active { right: 0; }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .side-drawer.active ~ .drawer-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drawer-header {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--neon-cyan);
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            text-shadow: var(--glow-cyan);
+        }
+
+        .drawer-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 14px 18px;
+            border-radius: 16px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .drawer-item:active { transform: scale(0.97); background: rgba(255,0,127,0.2); border-color: var(--neon-magenta); }
+
+        .brand-header {
+            text-align: center;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+
+        .header-bar .brand-header {
+            flex-grow: 1;
+        }
+
+        .brand-logo {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--neon-magenta), var(--neon-purple), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(225, 0, 255, 0.6);
+            margin-bottom: 2px;
+            animation: pulseLogo 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseLogo {
+            0% { filter: drop-shadow(0 0 5px rgba(255, 0, 127, 0.4)); }
+            100% { filter: drop-shadow(0 0 20px rgba(0, 223, 216, 0.9)); }
+        }
+
+        .brand-sub {
+            font-size: 0.7rem;
+            color: var(--neon-gold);
+            letter-spacing: 1px;
+            opacity: 0.95;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 202, 40, 0.4);
+        }
+
+        .screen-title {
+            font-size: 1.6rem;
+            font-weight: 900;
+            text-align: center;
+            margin: 4px 0;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            background: linear-gradient(180deg, #ffffff, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            position: relative;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            outline: none;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.6);
+            transform: translateY(0);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+            z-index: 30;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+            border-radius: 18px;
+            pointer-events: none;
+        }
+
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-glass {
+            background: rgba(22, 14, 38, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            margin-top: 0;
+        }
+        .btn-glass::after {
+            background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 50%);
+        }
+        .btn-glass:active {
+            background: rgba(255, 255, 255, 0.14);
+            transform: translateY(3px);
+        }
+        .btn-glass-magenta {
+            border-color: rgba(255, 0, 127, 0.7);
+            box-shadow: 0 8px 30px rgba(255, 0, 127, 0.35), inset 0 0 20px rgba(255, 0, 127, 0.25);
+        }
+        .btn-glass-cyan {
+            border-color: rgba(0, 223, 216, 0.7);
+            box-shadow: 0 8px 30px rgba(0, 223, 216, 0.35), inset 0 0 20px rgba(0, 223, 216, 0.25);
+        }
+        .btn-glass-gold {
+            border-color: rgba(255, 202, 40, 0.65);
+            box-shadow: 0 8px 30px rgba(255, 202, 40, 0.3), inset 0 0 18px rgba(255, 202, 40, 0.2);
+        }
+        .btn-glass-red {
+            border-color: rgba(211, 47, 47, 0.7);
+            box-shadow: 0 8px 30px rgba(211, 47, 47, 0.35), inset 0 0 18px rgba(211, 47, 47, 0.25);
+        }
+
+        .btn-disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        #screen-splash { 
+            justify-content: space-between; 
+            padding: 24px 16px; 
+        }
+
+        .splash-logo-container {
+            position: relative;
+            text-align: center;
+            margin: auto 0;
+            animation: float 3.5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .splash-title {
+            font-size: 2.7rem;
+            font-weight: 900;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #ffffff 10%, #ff007f 50%, #00dfd8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.7));
+        }
+
+        .splash-subtitle { 
+            font-size: 1.05rem; 
+            color: #c7d2fe; 
+            margin-top: 10px; 
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .menu-grid { width: 100%; display: flex; flex-direction: column; gap: 10px; margin: auto 0; }
+
+        .player-counter {
+            background: rgba(0, 223, 216, 0.12);
+            backdrop-filter: blur(12px);
+            padding: 6px 16px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 1px solid rgba(0, 223, 216, 0.5);
+            color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .players-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 44vh;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .player-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-glass);
+            border-radius: 16px;
+            padding: 10px 15px;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .player-info { display: flex; align-items: center; gap: 12px; }
+
+        .player-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid currentColor;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .player-details .name { font-size: 1.05rem; font-weight: bold; }
+        .player-details .tag { font-size: 0.75rem; opacity: 0.75; color: #a5b4fc; }
+        .player-actions { display: flex; gap: 6px; }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            background: linear-gradient(145deg, #180e2e, #0c061a);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 24px;
+            padding: 20px;
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), var(--glow-magenta);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content { transform: translateY(0); }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-height: 170px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .avatar-option {
+            aspect-ratio: 1;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .avatar-option.selected { 
+            border-color: var(--neon-cyan); 
+            background: rgba(0, 223, 216, 0.25); 
+            box-shadow: var(--glow-cyan);
+            transform: scale(1.05);
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .modal-input:focus { border-color: var(--neon-magenta); box-shadow: var(--glow-magenta); }
+
+        .categories-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-height: 54vh;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .category-card {
+            background: var(--card-glass);
+            border-radius: 18px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .category-card.selected {
+            border-color: var(--cat-color, var(--neon-magenta));
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 25px var(--cat-color, var(--neon-magenta));
+            transform: scale(1.03);
+        }
+
+        .category-icon { font-size: 2.1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
+        .category-title { font-size: 0.95rem; font-weight: bold; }
+
+        .category-card .checkmark {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--cat-color, var(--neon-magenta));
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .category-card.selected .checkmark { display: flex; }
+
+        .role-card-container {
+            width: 100%;
+            height: 320px;
+            perspective: 1000px;
+            margin: auto 0;
+        }
+
+        .role-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .role-card-inner.flipped { transform: rotateY(180deg); }
+
+        .role-card-front, .role-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            backdrop-filter: blur(15px);
+        }
+
+        .role-card-front { 
+            background: linear-gradient(135deg, rgba(121, 40, 202, 0.6), rgba(255, 0, 127, 0.6)); 
+            border-color: rgba(255, 0, 127, 0.5);
+            box-shadow: var(--glow-magenta);
+        }
+        .role-card-back { 
+            background: linear-gradient(135deg, rgba(13, 8, 24, 0.95), rgba(30, 15, 55, 0.95)); 
+            transform: rotateY(180deg); 
+            border-color: rgba(0, 223, 216, 0.5);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .secret-word { 
+            font-size: 2rem; 
+            font-weight: 900; 
+            color: var(--neon-cyan); 
+            margin-top: 12px; 
+            text-shadow: 0 0 25px rgba(0, 223, 216, 0.8); 
+        }
+        .imposter-text { 
+            font-size: 2rem; 
+            font-weight: 900; 
+            color: var(--neon-magenta); 
+            margin-top: 12px; 
+            text-shadow: 0 0 25px rgba(255, 0, 127, 0.8); 
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 10px auto;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 24px solid var(--neon-gold);
+            z-index: 10;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+        }
+
+        #wheel-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 35px rgba(0,0,0,0.9), 0 0 20px rgba(121, 40, 202, 0.5);
+        }
+
+        .wheel-center-cap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: #18122b;
+            border: 3px solid var(--neon-gold);
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.85rem;
+            color: var(--neon-gold);
+            box-shadow: var(--glow-gold);
+        }
+
+        .question-card {
+            background: var(--card-glass);
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid rgba(0, 223, 216, 0.4);
+            text-align: center;
+            margin: 8px 0;
+            width: 100%;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), var(--glow-cyan);
+            backdrop-filter: blur(10px);
+        }
+
+        .versus-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: var(--card-glass);
+            padding: 12px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            width: 100%;
+            margin-bottom: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        .versus-player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .versus-avatar {
+            font-size: 1.8rem;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid currentColor;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .versus-name { font-weight: 900; font-size: 1.05rem; }
+        .versus-role { font-size: 0.75rem; color: #c7d2fe; font-weight: bold; }
+
+        .voter-selection {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 10px;
+            width: 100%;
+            margin: 10px 0;
+            max-height: 44vh;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .vote-btn {
+            background: var(--card-glass);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            padding: 14px 18px;
+            border-radius: 16px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .vote-btn.selected {
+            background: rgba(255, 0, 127, 0.35);
+            border-color: var(--neon-magenta);
+            box-shadow: var(--glow-magenta);
+            transform: scale(1.02);
+        }
+
+        .cinematic-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            perspective: 1200px;
+        }
+
+        .cinematic-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,0,127,0.25) 0%, rgba(7,4,15,0.96) 80%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .suspense-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--neon-gold);
+            text-shadow: var(--glow-gold);
+            margin-bottom: 12px;
+        }
+
+        .sequential-names-container {
+            width: 100%;
+            max-height: 40vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: auto 0;
+            padding: 8px;
+        }
+
+        .sequential-name-card {
+            background: var(--card-glass);
+            border: 1px solid rgba(255,255,255,0.18);
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(15px) scale(0.9);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .sequential-name-card.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .reveal-card {
+            width: 100%;
+            background: rgba(15, 10, 30, 0.95);
+            border: 2px solid rgba(255, 0, 127, 0.7);
+            border-radius: 26px;
+            padding: 24px 16px;
+            box-shadow: 0 0 60px rgba(255, 0, 127, 0.4), inset 0 0 25px rgba(255, 0, 127, 0.3);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            margin: auto 0;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .reveal-card.revealed-imposter {
+            animation: slowMoZoomReveal 2.2s cubic-bezier(0.05, 0.85, 0.15, 1) forwards;
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 100px rgba(255, 0, 127, 0.9), inset 0 0 35px rgba(255, 0, 127, 0.6);
+        }
+
+        @keyframes slowMoZoomReveal {
+            0% { transform: scale(0.5) rotateY(90deg); opacity: 0; filter: blur(10px); }
+            50% { transform: scale(1.08) rotateY(0deg); opacity: 0.9; filter: blur(0px); }
+            100% { transform: scale(1) rotateY(0deg); opacity: 1; filter: blur(0px); }
+        }
+
+        .reveal-avatar-box {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            background: rgba(0, 0, 0, 0.85);
+            border: 4px solid var(--neon-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .reveal-name {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--neon-gold);
+            text-shadow: 0 0 20px rgba(255, 202, 40, 0.8);
+            min-height: 40px;
+        }
+
+        .reveal-badge {
+            font-size: 1.05rem;
+            font-weight: 800;
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: rgba(255, 0, 127, 0.3);
+            border: 1.5px solid var(--neon-magenta);
+            color: var(--neon-magenta);
+            letter-spacing: 1px;
+            box-shadow: var(--glow-magenta);
+        }
+
+        .leaderboard {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 10px 0;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-glass);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .setting-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-glass);
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+        }
+
+        .toggle {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            appearance: none;
+            background: rgba(255,255,255,0.2);
+            outline: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .toggle:checked { background: var(--neon-magenta); box-shadow: var(--glow-magenta); }
+
+        .toggle::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            background: #fff;
+            transition: 0.3s;
+        }
+
+        .toggle:checked::before { left: 25px; }
+
+        #slowmo-overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 50% 42%, rgba(121, 40, 202, 0.24), transparent 34%),
+                radial-gradient(circle at 50% 58%, rgba(255, 0, 127, 0.18), transparent 58%),
+                rgba(7, 4, 15, 0.98);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.9s ease, visibility 0.9s ease;
+            overflow: hidden;
+        }
+
+        #slowmo-overlay::before,
+        #slowmo-overlay::after {
+            content: '';
+            position: absolute;
+            width: min(82vw, 360px);
+            aspect-ratio: 1;
+            border: 1px solid rgba(0, 223, 216, 0.2);
+            border-radius: 50%;
+            box-shadow: 0 0 45px rgba(0, 223, 216, 0.08), inset 0 0 45px rgba(255, 0, 127, 0.08);
+            animation: introOrbit 9s linear infinite;
+            pointer-events: none;
+        }
+        #slowmo-overlay::after {
+            width: min(106vw, 460px);
+            border-color: rgba(255, 0, 127, 0.18);
+            animation-duration: 14s;
+            animation-direction: reverse;
+        }
+
+        #slowmo-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        @keyframes introOrbit {
+            from { transform: rotate(0deg) scale(0.96); }
+            to { transform: rotate(360deg) scale(1.04); }
+        }
+
+        .slowmo-card {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(145deg, rgba(35, 12, 60, 0.97), rgba(12, 6, 26, 0.99));
+            border: 2px solid rgba(255, 0, 127, 0.8);
+            border-radius: 30px;
+            padding: 32px 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 0 90px rgba(255, 0, 127, 0.42), inset 0 0 35px rgba(0, 223, 216, 0.22);
+            transform: perspective(900px) translateY(48px) scale(0.72) rotateX(13deg);
+            opacity: 0;
+            transition: transform 2.35s cubic-bezier(0.12, 0.82, 0.15, 1), opacity 1.1s ease;
+        }
+
+        #slowmo-overlay.active .slowmo-card {
+            transform: perspective(900px) translateY(0) scale(1) rotateX(0deg);
+            opacity: 1;
+        }
+
+        .slowmo-card > div:first-child {
+            animation: crownPulse 1.8s ease-in-out infinite alternate;
+        }
+
+        /* v6.1 opening intro timing and English studio branding */
+        .slowmo-studio {
+            letter-spacing: 6px;
+            font-size: .78rem;
+        }
+        .slowmo-title {
+            font-size: clamp(2.15rem, 10vw, 2.8rem);
+            letter-spacing: 2px;
+        }
+        #slowmo-overlay.active .slowmo-card {
+            transition: transform 2.8s cubic-bezier(0.12, 0.82, 0.15, 1), opacity 1.5s ease;
+        }
+
+        .slowmo-title {
+            animation: introTitleGlow 2.2s ease-in-out infinite alternate;
+        }
+        @keyframes crownPulse {
+            from { transform: translateY(2px) scale(0.92); filter: drop-shadow(0 0 4px rgba(255,202,40,.25)); }
+            to { transform: translateY(-5px) scale(1.08); filter: drop-shadow(0 0 18px rgba(255,202,40,.8)); }
+        }
+        @keyframes introTitleGlow {
+            from { filter: drop-shadow(0 0 5px rgba(255,0,127,.35)); letter-spacing: 0; }
+            to { filter: drop-shadow(0 0 19px rgba(0,223,216,.7)); letter-spacing: 1.2px; }
+        }
+        .slowmo-emblem { font-size: 3.5rem; margin-bottom: 5px; opacity: 0; transform: translateY(-35px) scale(.45) rotate(-25deg); }
+        #slowmo-overlay.active .slowmo-emblem { animation: emblemEntrance 1.35s .15s cubic-bezier(.12,.82,.15,1) forwards, crownPulse 1.8s 1.5s ease-in-out infinite alternate; }
+        .slowmo-studio { color: var(--neon-cyan); font-size: .72rem; font-weight: 900; letter-spacing: 7px; opacity: 0; transform: translateY(12px); }
+        #slowmo-overlay.active .slowmo-studio { animation: introTextIn .8s .65s ease forwards; }
+        .slowmo-game-title { color: #fff; font-size: 1.3rem; font-weight: 900; margin-top: -5px; opacity: 0; transform: translateY(25px) scale(.88); text-shadow: 0 0 18px rgba(0,223,216,.55); }
+        #slowmo-overlay.active .slowmo-game-title { animation: gameTitleEntrance 1.25s 1.15s cubic-bezier(.12,.82,.15,1) forwards; }
+        #slowmo-overlay.active .slowmo-quote { animation: introTextIn .9s 1.75s ease forwards; opacity: 0; }
+        #slowmo-overlay.active .slowmo-badge { animation: introTextIn .9s 2.15s ease forwards; opacity: 0; }
+        @keyframes emblemEntrance { to { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+        @keyframes introTextIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes gameTitleEntrance { 0% { opacity: 0; transform: translateY(25px) scale(.88); filter: blur(8px); } 65% { opacity: 1; transform: translateY(-3px) scale(1.04); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+
+        .difficulty-grid { width: 100%; display: grid; grid-template-columns: 1fr; gap: 12px; margin: 12px 0 16px; }
+        .difficulty-card { width: 100%; border: 1px solid rgba(255,255,255,.16); border-radius: 20px; padding: 15px; text-align: right; color: #fff; background: linear-gradient(120deg, rgba(255,255,255,.075), rgba(255,255,255,.025)); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; display: flex; align-items: center; gap: 13px; }
+        .difficulty-card:active { transform: scale(.98); }
+        .difficulty-card.selected { border: 2px solid var(--neon-cyan); background: linear-gradient(120deg, rgba(0,223,216,.18), rgba(255,0,127,.10)); box-shadow: 0 0 22px rgba(0,223,216,.18); }
+        .difficulty-icon { font-size: 2rem; width: 48px; text-align: center; }
+        .difficulty-copy { flex: 1; }
+        .difficulty-name { font-size: 1rem; font-weight: 900; }
+        .difficulty-desc { color: #c7d2fe; font-size: .75rem; margin-top: 4px; line-height: 1.5; }
+        .difficulty-check { color: var(--neon-cyan); font-size: 1.25rem; opacity: 0; }
+        .difficulty-card.selected .difficulty-check { opacity: 1; }
+
+        .voter-turn-panel {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin: 8px 0 4px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 202, 40, 0.58);
+            background: linear-gradient(120deg, rgba(255, 202, 40, 0.12), rgba(121, 40, 202, 0.2), rgba(0, 223, 216, 0.1));
+            box-shadow: 0 0 24px rgba(255, 202, 40, 0.12), inset 0 0 18px rgba(255,255,255,0.035);
+        }
+        .voter-turn-avatar {
+            flex: 0 0 54px;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
+            border: 2px solid var(--neon-gold);
+            box-shadow: 0 0 17px rgba(255,202,40,0.32);
+            font-size: 1.8rem;
+        }
+        .voter-turn-copy { flex: 1; min-width: 0; text-align: right; }
+        .voter-turn-kicker { color: var(--neon-gold); font-size: 0.75rem; font-weight: 900; margin-bottom: 3px; }
+        .voter-turn-name { color: #fff; font-size: 1.2rem; font-weight: 900; text-shadow: 0 0 14px rgba(0,223,216,.4); overflow-wrap: anywhere; }
+        .voter-turn-hint { color: #c7d2fe; font-size: 0.72rem; margin-top: 3px; line-height: 1.45; }
+        .voter-turn-counter {
+            flex: 0 0 auto;
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0,223,216,.38);
+            background: rgba(0,223,216,.08);
+            border-radius: 12px;
+            padding: 7px 9px;
+            font-size: 0.78rem;
+            font-weight: 900;
+            direction: ltr;
+        }
+        #screen-vote .voter-selection { max-height: 38vh; margin-top: 6px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #slowmo-overlay::before, #slowmo-overlay::after,
+            .slowmo-card > div:first-child, .slowmo-title, .slowmo-emblem,
+            .slowmo-studio, .slowmo-game-title, .slowmo-quote, .slowmo-badge { animation: none !important; opacity: 1 !important; transform: none !important; }
+            .slowmo-card { transition-duration: 0.4s !important; }
+        }
+
+        .slowmo-title {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffca28, #ff007f, #00dfd8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 202, 40, 0.7);
+            margin-bottom: 15px;
+        }
+
+        .slowmo-quote {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.7;
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            border-right: 4px solid var(--neon-magenta);
+            border-left: 4px solid var(--neon-cyan);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .slowmo-badge {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: var(--glow-cyan);
+        }
+
+        
+/* MARO v6.1: cinematic between splash and main menu */
+#start-game-cinematic{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;overflow:hidden;color:#fff;text-align:center;background:radial-gradient(ellipse at 50% 42%,rgba(121,40,202,.30),transparent 42%),radial-gradient(ellipse at 50% 72%,rgba(255,0,127,.22),transparent 55%),#07040f;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .65s ease,visibility .65s ease}
+#start-game-cinematic.active{opacity:1;visibility:visible;pointer-events:auto}
+.start-cinema-orbit{position:absolute;width:min(88vw,390px);aspect-ratio:1;border:1px solid rgba(0,223,216,.28);border-radius:50%;box-shadow:0 0 55px rgba(0,223,216,.10),inset 0 0 45px rgba(255,0,127,.10);animation:startCinemaOrbit 11s linear infinite}
+.start-cinema-orbit:before,.start-cinema-orbit:after{content:"";position:absolute;inset:-13%;border:1px solid rgba(255,0,127,.22);border-radius:50%;animation:startCinemaOrbit 16s linear infinite reverse}
+.start-cinema-orbit:after{inset:14%;border-style:dashed;border-color:rgba(0,223,216,.25);animation-duration:8s}
+.start-cinema-card{position:relative;z-index:1;width:min(92vw,430px);padding:32px 19px 27px;border:1px solid rgba(0,223,216,.48);border-radius:28px;background:linear-gradient(150deg,rgba(35,12,60,.97),rgba(8,5,19,.98));box-shadow:0 0 75px rgba(255,0,127,.22),inset 0 0 34px rgba(0,223,216,.08);opacity:0;transform:perspective(900px) translateY(55px) scale(.78) rotateX(12deg)}
+#start-game-cinematic.active .start-cinema-card{animation:startCinemaCardIn 1.5s cubic-bezier(.12,.82,.15,1) .12s forwards}
+.start-cinema-kicker{color:#00dfd8;font-size:.68rem;font-weight:900;letter-spacing:4px;opacity:0}
+#start-game-cinematic.active .start-cinema-kicker{animation:startCinemaFadeUp .8s .55s ease forwards}
+.start-cinema-crown{margin-top:8px;font-size:3.1rem;opacity:0;transform:translateY(-25px) scale(.5) rotate(-20deg)}
+#start-game-cinematic.active .start-cinema-crown{animation:startCinemaCrown 1s .8s cubic-bezier(.12,.82,.15,1) forwards}
+.start-cinema-brand{margin-top:4px;color:#fff;font-size:clamp(1.5rem,7vw,2rem);font-weight:1000;letter-spacing:3px;text-shadow:0 0 20px rgba(0,223,216,.55);opacity:0}
+#start-game-cinematic.active .start-cinema-brand{animation:startCinemaFadeUp .9s 1.1s ease forwards}
+.start-cinema-rule{width:0;height:2px;margin:17px auto 19px;background:linear-gradient(90deg,transparent,#00dfd8,#ff007f,transparent)}
+#start-game-cinematic.active .start-cinema-rule{animation:startCinemaRule .9s 1.5s ease forwards}
+.start-cinema-phrase{color:#fff;font-size:clamp(1.25rem,6vw,1.75rem);font-weight:900;line-height:1.55;opacity:0;transform:translateY(20px) scale(.94);text-shadow:0 0 18px rgba(255,255,255,.18)}
+#start-game-cinematic.active .start-cinema-phrase.first{animation:startCinemaPhrase 1s 1.8s cubic-bezier(.12,.82,.15,1) forwards}
+#start-game-cinematic.active .start-cinema-phrase.second{animation:startCinemaPhrase 1s 2.45s cubic-bezier(.12,.82,.15,1) forwards}
+.start-cinema-number{margin-top:1px;color:#ffca28;font-size:clamp(2rem,10vw,2.8rem);line-height:1.25;font-weight:1000;text-shadow:0 0 12px rgba(255,202,40,.38);opacity:0;transform:scale(.55)}
+#start-game-cinematic.active .start-cinema-number{animation:startCinemaNumber 1.15s 3.05s cubic-bezier(.12,.82,.15,1) forwards}
+.start-cinema-caption{margin-top:18px;color:#00dfd8;font-size:.78rem;font-weight:800;letter-spacing:1px;opacity:0}
+#start-game-cinematic.active .start-cinema-caption{animation:startCinemaFadeUp .9s 3.7s ease forwards}
+@keyframes startCinemaOrbit{to{transform:rotate(360deg) scale(1.04)}}
+@keyframes startCinemaCardIn{to{opacity:1;transform:perspective(900px) translateY(0) scale(1) rotateX(0)}}
+@keyframes startCinemaFadeUp{to{opacity:1;transform:translateY(0)}}
+@keyframes startCinemaCrown{to{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes startCinemaRule{to{width:78%}}
+@keyframes startCinemaPhrase{to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes startCinemaNumber{0%{opacity:0;transform:scale(.55)}70%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.start-cinema-orbit,.start-cinema-orbit:before,.start-cinema-orbit:after{animation:none!important}#start-game-cinematic.active .start-cinema-card,#start-game-cinematic.active .start-cinema-kicker,#start-game-cinematic.active .start-cinema-crown,#start-game-cinematic.active .start-cinema-brand,#start-game-cinematic.active .start-cinema-rule,#start-game-cinematic.active .start-cinema-phrase,#start-game-cinematic.active .start-cinema-number,#start-game-cinematic.active .start-cinema-caption{animation:none!important;opacity:1!important;transform:none!important}}
+
+        /* MARO v5.6: reliable mobile drawer gestures and lighter rendering */
+        .side-drawer {
+            right: 0;
+            transform: translate3d(110%, 0, 0);
+            transition: transform 260ms ease-out;
+            touch-action: pan-y;
+            will-change: transform;
+            overscroll-behavior: contain;
+        }
+        .side-drawer.active { right: 0; transform: translate3d(0, 0, 0); }
+        .drawer-overlay { transition: opacity 180ms ease; backdrop-filter: none; -webkit-backdrop-filter: none; }
+        .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+        .side-drawer, .drawer-overlay { -webkit-tap-highlight-color: transparent; }
+        .vignette { box-shadow: inset 0 0 70px rgba(0,0,0,.72); }
+        .btn, .btn-glass, .player-card, .category-card, .vote-btn, .setting-row,
+        .question-card, .versus-box, .reveal-card, .modal-content, .role-card-front,
+        .role-card-back, .slowmo-card {
+            -webkit-backdrop-filter: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
+
+    
+        /* MARO GAMES: opening logo reveal inspired by the supplied reference video */
+        #slowmo-overlay {
+            background: #fff !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            transition: opacity .55s ease, visibility .55s ease !important;
+        }
+        #slowmo-overlay::before, #slowmo-overlay::after { display: none !important; }
+        #slowmo-overlay .slowmo-card {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            opacity: 1;
+            transform: none;
+            transition: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        .maro-intro-emblem {
+            width: 82px;
+            height: 82px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(.35) rotate(-35deg);
+        }
+        #slowmo-overlay.active .maro-intro-emblem {
+            animation: maroEmblemReveal 1.35s .15s cubic-bezier(.16,.85,.2,1) forwards;
+        }
+        .maro-intro-ring {
+            position: absolute;
+            width: 68px;
+            height: 68px;
+            border: 4px solid #555;
+            border-right-color: #aaa;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(0,0,0,.05);
+        }
+        .maro-intro-sword {
+            position: absolute;
+            width: 9px;
+            height: 59px;
+            top: 5px;
+            left: calc(50% - 4.5px);
+            border-radius: 5px 5px 2px 2px;
+            background: linear-gradient(90deg,#087bbd,#31b8ee,#087bbd);
+            transform: rotate(0deg) scaleY(.05);
+            transform-origin: bottom center;
+            box-shadow: 0 0 9px rgba(0,145,220,.28);
+        }
+        .maro-intro-sword::before {
+            content: "";
+            position: absolute;
+            width: 22px;
+            height: 5px;
+            left: -6.5px;
+            bottom: 9px;
+            border-radius: 4px;
+            background: #168dc8;
+        }
+        .maro-intro-sword::after {
+            content: "";
+            position: absolute;
+            width: 7px;
+            height: 9px;
+            left: 1px;
+            top: -5px;
+            border-radius: 5px 5px 1px 1px;
+            background: #168dc8;
+        }
+        #slowmo-overlay.active .maro-intro-sword {
+            animation: maroSwordReveal .85s .55s cubic-bezier(.16,.85,.2,1) forwards;
+        }
+        .maro-intro-brand {
+            color: #30343a;
+            font-size: clamp(1.7rem, 8vw, 2.25rem);
+            line-height: 1;
+            font-weight: 1000;
+            letter-spacing: 5px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(13px);
+        }
+        #slowmo-overlay.active .maro-intro-brand {
+            animation: maroBrandReveal 1.15s 1.25s cubic-bezier(.16,.85,.2,1) forwards;
+        }
+        @keyframes maroEmblemReveal {
+            0% { opacity: 0; transform: scale(.35) rotate(-35deg); }
+            65% { opacity: 1; transform: scale(1.12) rotate(5deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+        @keyframes maroSwordReveal {
+            0% { transform: scaleY(.05); }
+            70% { transform: scaleY(1.12); }
+            100% { transform: scaleY(1); }
+        }
+        @keyframes maroBrandReveal {
+            0% { opacity: 0; transform: translateY(13px); letter-spacing: 9px; }
+            100% { opacity: 1; transform: translateY(0); letter-spacing: 5px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #slowmo-overlay.active .maro-intro-emblem,
+            #slowmo-overlay.active .maro-intro-sword,
+            #slowmo-overlay.active .maro-intro-brand {
+                animation-duration: .01ms !important;
+                animation-delay: 0ms !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+
+        /* MARO GAMES - premium cinematic opening */
+        #slowmo-overlay {
+            overflow: hidden !important;
+            isolation: isolate;
+            background:
+                radial-gradient(ellipse at 50% 46%, rgba(30,34,57,.96) 0%, rgba(10,12,24,.99) 48%, #05060c 100%) !important;
+            transition: opacity .8s cubic-bezier(.2,.7,.2,1), visibility .8s !important;
+        }
+        #slowmo-overlay::before {
+            content: "";
+            display: block !important;
+            position: absolute;
+            inset: -45%;
+            z-index: -1;
+            background: conic-gradient(from 0deg, transparent 0 27%, rgba(54,205,255,.12) 32%, transparent 38% 62%, rgba(190,76,255,.13) 68%, transparent 74%);
+            animation: maroNebulaSpin 13s linear infinite;
+        }
+        #slowmo-overlay::after {
+            content: "";
+            display: block !important;
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: .18;
+            background-image: radial-gradient(rgba(255,255,255,.75) .7px, transparent .9px);
+            background-size: 29px 29px;
+            mask-image: radial-gradient(ellipse at center, #000 0%, transparent 75%);
+        }
+        #slowmo-overlay .slowmo-card {
+            position: relative;
+            flex-direction: column;
+            gap: 0;
+            transform: translateY(-2vh);
+        }
+        .maro-intro-emblem {
+            width: 116px;
+            height: 116px;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 22px rgba(50,190,255,.28));
+        }
+        .maro-intro-ring {
+            width: 94px;
+            height: 94px;
+            border: 2px solid transparent;
+            border-top-color: #73e8ff;
+            border-right-color: #9d70ff;
+            border-bottom-color: rgba(255,255,255,.78);
+            border-left-color: rgba(255,255,255,.16);
+            box-shadow: 0 0 0 7px rgba(95,140,255,.055), inset 0 0 22px rgba(58,189,255,.12), 0 0 28px rgba(70,175,255,.22);
+        }
+        .maro-intro-ring::before {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border: 1px solid rgba(255,255,255,.22);
+            border-radius: 50%;
+        }
+        .maro-intro-ring::after {
+            content: "";
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            top: 8px;
+            right: 12px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 12px 4px #54dfff;
+        }
+        .maro-intro-sword {
+            width: 8px;
+            height: 73px;
+            top: 20px;
+            background: linear-gradient(90deg,#1683bd,#e6fbff 48%,#35cfff 75%,#12628f);
+            box-shadow: 0 0 10px rgba(59,204,255,.8), 0 0 28px rgba(59,204,255,.42);
+        }
+        .maro-intro-sword::before {
+            height: 5px;
+            background: linear-gradient(90deg,#8664ff,#d7faff,#4ccfff);
+            box-shadow: 0 0 12px rgba(91,197,255,.8);
+        }
+        .maro-intro-sword::after {
+            background: #d8faff;
+            box-shadow: 0 0 10px #53dfff;
+        }
+        .maro-intro-kicker {
+            color: #9ba8c7;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 7px;
+            margin: 0 0 12px 7px;
+            opacity: 0;
+        }
+        #slowmo-overlay.active .maro-intro-kicker {
+            animation: maroKickerIn .7s 1.12s ease forwards;
+        }
+        .maro-intro-brand {
+            font-size: clamp(2rem, 10vw, 3.15rem);
+            font-weight: 1000;
+            letter-spacing: 7px;
+            background: linear-gradient(180deg,#ffffff 5%,#d9eaff 42%,#7b91b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 8px 28px rgba(87,167,255,.16);
+            white-space: nowrap;
+        }
+        #slowmo-overlay.active .maro-intro-brand {
+            animation: maroBrandReveal 1.1s 1.25s cubic-bezier(.16,.85,.2,1) forwards;
+        }
+        .maro-intro-tagline {
+            margin-top: 13px;
+            color: #66dfff;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            opacity: 0;
+        }
+        #slowmo-overlay.active .maro-intro-tagline {
+            animation: maroKickerIn .8s 1.85s ease forwards;
+        }
+        #slowmo-overlay.active .maro-intro-emblem {
+            animation: maroEmblemReveal 1.25s .25s cubic-bezier(.16,.85,.2,1) forwards, maroEmblemFloat 3.4s 1.7s ease-in-out infinite;
+        }
+        #slowmo-overlay.active .maro-intro-ring {
+            animation: maroRingTurn 7s 1.5s linear infinite;
+        }
+        #slowmo-overlay.active .maro-intro-sword {
+            animation: maroSwordReveal .9s .72s cubic-bezier(.16,.85,.2,1) forwards;
+        }
+        @keyframes maroNebulaSpin { to { transform: rotate(360deg); } }
+        @keyframes maroRingTurn { to { transform: rotate(360deg); } }
+        @keyframes maroEmblemFloat {
+            0%,100% { translate: 0 0; }
+            50% { translate: 0 -5px; }
+        }
+        @keyframes maroKickerIn {
+            from { opacity: 0; transform: translateY(8px); letter-spacing: 10px; }
+            to { opacity: 1; transform: translateY(0); letter-spacing: 7px; }
+        }
+        @media (max-width: 380px) {
+            .maro-intro-brand { letter-spacing: 4px; }
+            .maro-intro-tagline { letter-spacing: 3px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #slowmo-overlay::before { animation: none !important; }
+            #slowmo-overlay.active .maro-intro-emblem,
+            #slowmo-overlay.active .maro-intro-ring,
+            #slowmo-overlay.active .maro-intro-sword,
+            #slowmo-overlay.active .maro-intro-kicker,
+            #slowmo-overlay.active .maro-intro-brand,
+            #slowmo-overlay.active .maro-intro-tagline {
+                animation-duration: .01ms !important;
+                animation-delay: 0ms !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="vignette"></div>
+
+    <div class="drawer-overlay" id="drawer-overlay" onclick="App.toggleDrawer(false)" aria-hidden="true"></div>
+    <div class="side-drawer" id="side-drawer">
+        <div class="drawer-header">🌟 القائمة الرئيسية</div>
+        <div class="drawer-item" onclick="App.toggleDrawer(false); App.navigateTo('screen-menu');">🏠 الصفحة الرئيسية</div>
+        <div class="drawer-item" onclick="App.toggleDrawer(false); App.navigateTo('screen-settings');">⚙️ إعدادات اللعبة</div>
+        <div class="drawer-item" onclick="App.toggleDrawer(false); App.restartCurrentRound();">🔄 إعادة الجولة الحالية</div>
+        <div class="drawer-item" onclick="App.toggleDrawer(false); App.showHelpModal();">📖 طريقة اللعب والمساعدة</div>
+        <div class="drawer-item" onclick="App.toggleDrawer(false); App.showAboutModal();">ℹ️ معلومات المطور</div>
+    </div>
+
+    <div id="slowmo-overlay" aria-label="MARO GAMES opening cinematic">
+        <div class="slowmo-card">
+            <div class="maro-intro-emblem">
+                <div class="maro-intro-ring"></div>
+                <div class="maro-intro-sword"></div>
+            </div>
+            <div class="maro-intro-kicker">PRESENTS</div>
+            <div class="maro-intro-brand">MARO GAMES</div>
+            <div class="maro-intro-tagline">THE GAME STARTS NOW</div>
+        </div>
+    </div>
+
+    
+    <div id="start-game-cinematic" aria-hidden="true">
+        <div class="start-cinema-orbit"></div>
+        <div class="start-cinema-card">
+            <div class="start-cinema-kicker">MARO GAMES • GAME ON</div>
+            <div class="start-cinema-crown">👑</div>
+            <div class="start-cinema-brand">MARO GAMES</div>
+            <div class="start-cinema-rule"></div>
+            <div class="start-cinema-phrase first">شك في عدوك مرة...</div>
+            <div class="start-cinema-phrase second">وفي صاحبك</div>
+            <div class="start-cinema-number">1000 مرة 🔥</div>
+            <div class="start-cinema-caption">متثقش في أي حد... اللعبة بدأت</div>
+        </div>
+    </div>
+
+<div id="app-container">
+
+        <div id="screen-splash" class="screen active">
+            <div class="brand-header">
+                <div class="brand-logo">MARO GAMES PRO</div>
+                <div class="brand-sub">Developed by MARO GAMES</div>
+            </div>
+
+            <div class="splash-logo-container">
+                <div class="splash-title">اقفش اللي برا<br>يا حلو</div>
+                <div class="splash-subtitle">لعبة البارتي والتخمين الأولى 🔥</div>
+            </div>
+
+            <button class="btn btn-glass btn-glass-magenta" onclick="App.triggerSlowMoStart()">
+                🎮 ابدأ اللعب
+            </button>
+        </div>
+
+        <div id="screen-menu" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="brand-logo">MARO GAMES PRO</div>
+                    <div class="brand-sub">اقفش اللي برا يا حلو</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div class="menu-grid">
+                <button class="btn btn-glass btn-glass-magenta" onclick="App.startNewGameSequence()">
+                    🎮 بدء لعبة جماعية جديدة
+                </button>
+                <button class="btn btn-glass" onclick="App.navigateTo('screen-players')">
+                    👥 اللاعبين (<span id="menu-players-count">0</span>)
+                </button>
+                <button class="btn btn-glass" onclick="App.navigateTo('screen-categories')">
+                    📚 الأقسام (<span id="menu-selected-cat">الكل</span>)
+                </button>
+                <button class="btn btn-glass btn-glass-gold" onclick="App.showStatsScreen()">
+                    🏆 الإحصائيات والترتيب
+                </button>
+                <button class="btn btn-glass" onclick="App.navigateTo('screen-settings')">
+                    ⚙️ الإعدادات
+                </button>
+            </div>
+
+            <div style="font-size: 0.7rem; opacity: 0.6; text-align: center;">Developed by MARO GAMES • PRO v5.7</div>
+        </div>
+
+        <div id="screen-players" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.25rem;">👥 اللاعبين</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+            
+            <div class="player-counter" id="player-counter-badge" style="margin-bottom: 6px;">عدد اللاعبين: 0 / 12</div>
+
+            <div class="players-list" id="players-list-container"></div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-cyan" id="btn-add-player" onclick="App.openAddPlayerModal()">
+                    + إضافة لاعب جديد
+                </button>
+                <button class="btn btn-glass btn-glass-magenta" id="btn-confirm-players" onclick="App.navigateTo('screen-categories')">
+                    متابعة إلى الأقسام ➔
+                </button>
+                <button class="btn btn-glass" style="padding:10px; font-size:0.9rem;" onclick="App.navigateTo('screen-menu')">
+                    العودة للقائمة
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-categories" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.25rem;">📚 اختار القسم</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+            <div style="font-size:0.8rem; color:#c7d2fe; text-align:center; margin-bottom: 4px;">اختر من بين 16 قسمًا متنوعًا (كلمات غير منتهية وحصرية)</div>
+
+            <div class="categories-grid" id="categories-grid-container"></div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-magenta" onclick="App.openDifficultyScreen()">
+                    متابعة لاختيار الصعوبة ➜
+                </button>
+                <button class="btn btn-glass" style="padding:10px; font-size:0.9rem;" onclick="App.navigateTo('screen-menu')">
+                    العودة للقائمة
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-difficulty" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)"><span></span><span></span><span></span></div>
+                <div class="brand-header" style="margin:0;">
+                    <div class="screen-title" style="font-size:1.25rem;">⚡ اختار مستوى الصعوبة</div>
+                </div>
+                <div style="width:38px;"></div>
+            </div>
+            <div style="text-align:center; color:#c7d2fe; font-size:.82rem; line-height:1.6; margin:4px 0 8px;">اختار مستوى الكلمات اللي هتظهر في القسم: سهل أو متوسط أو صعب. الصعوبة بتغيّر الكلمة نفسها، مش عدد الأسئلة.</div>
+            <div class="difficulty-grid">
+                <button type="button" class="difficulty-card" data-difficulty="easy" onclick="App.setDifficulty('easy')">
+                    <div class="difficulty-icon">🟢</div><div class="difficulty-copy"><div class="difficulty-name">EASY - سهل</div><div class="difficulty-desc">كلمات وأسماء مشهورة وسهلة التخمين.</div></div><div class="difficulty-check">✓</div>
+                </button>
+                <button type="button" class="difficulty-card selected" data-difficulty="medium" onclick="App.setDifficulty('medium')">
+                    <div class="difficulty-icon">🟡</div><div class="difficulty-copy"><div class="difficulty-name">MEDIUM - متوسط</div><div class="difficulty-desc">كلمات متوسطة الشهرة وتحتاج شوية تفكير.</div></div><div class="difficulty-check">✓</div>
+                </button>
+                <button type="button" class="difficulty-card" data-difficulty="hard" onclick="App.setDifficulty('hard')">
+                    <div class="difficulty-icon">🔴</div><div class="difficulty-copy"><div class="difficulty-name">HARD - صعب</div><div class="difficulty-desc">كلمات نادرة أو متخصصة وصعبة التخمين.</div></div><div class="difficulty-check">✓</div>
+                </button>
+            </div>
+            <div style="width:100%;">
+                <button class="btn btn-glass btn-glass-magenta" onclick="App.launchGameRound()">🔥 ابدأ الجولة</button>
+                <button class="btn btn-glass" style="padding:10px;font-size:.9rem;" onclick="App.navigateTo('screen-categories')">رجوع لاختيار القسم</button>
+            </div>
+        </div>
+
+        <div id="screen-roles" class="screen">
+            <div class="brand-header">
+                <div class="brand-logo" id="role-player-tag">دور اللاعب</div>
+                <div class="screen-title" id="role-player-name">اسم اللاعب</div>
+            </div>
+
+            <div class="role-card-container" onclick="App.flipRoleCard()">
+                <div class="role-card-inner" id="role-card-inner">
+                    <div class="role-card-front">
+                        <div style="font-size: 3.5rem;">🔒</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; margin-top:12px;">اضغط لكشف السر</div>
+                        <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 4px;">تأكد أن لا أحد ينظر إلى الشاشة</div>
+                    </div>
+                    <div class="role-card-back">
+                        <div id="role-card-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-glass btn-glass-cyan" id="btn-next-role" onclick="App.nextPlayerRole()" style="visibility: hidden;">
+                تم، سلم الهاتف للاعب التالي ➔
+            </button>
+        </div>
+
+        <div id="screen-wheel" class="screen">
+            <div class="brand-header">
+                <div class="screen-title" style="font-size: 1.4rem;">🎡 عجلة بداية الأسئلة</div>
+                <div style="font-size: 0.8rem; color:#c7d2fe;">من الذي سيبدأ بطرح أول سؤال؟</div>
+            </div>
+
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheel-canvas" width="240" height="240"></canvas>
+                <div class="wheel-center-cap">MARO</div>
+            </div>
+
+            <div id="wheel-result-display" style="font-size: 1.15rem; font-weight: 900; color: #ffca28; min-height: 35px; text-align: center; text-shadow: var(--glow-gold);">
+                اضغط لتحديد اللاعب البادئ!
+            </div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-gold" id="btn-spin-wheel" onclick="App.spinWheel()">
+                    🎯 تدوير العجلة
+                </button>
+                <button class="btn btn-glass btn-glass-magenta" id="btn-wheel-continue" onclick="App.startQuestionsPhase()" style="display: none;">
+                    الانتقال لطرح الأسئلة ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-questions" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.15rem;">❓ جولة الأسئلة المباشرة</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div class="versus-box">
+                <div class="versus-player">
+                    <div class="versus-avatar" id="asker-avatar" style="color:#00dfd8;">👨</div>
+                    <div class="versus-name" id="asker-name">أحمد</div>
+                    <div class="versus-role">السائل 🗣️</div>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #ffca28;">➔</div>
+                <div class="versus-player">
+                    <div class="versus-avatar" id="target-avatar" style="color:#ff007f;">👩</div>
+                    <div class="versus-name" id="target-name">سارة</div>
+                    <div class="versus-role">المَسؤول 🎯</div>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div style="font-size:0.8rem; color:#ffca28; margin-bottom:4px;" id="question-category-label">سؤال مقترح للقسم:</div>
+                <div id="suggested-question-text" style="font-size:1.05rem; font-weight:bold;">جاري التحميل...</div>
+            </div>
+
+            <button class="btn btn-glass btn-glass-cyan" onclick="App.nextSuggestedQuestion()" style="margin-bottom:8px; padding:10px; font-size:0.9rem;">
+                🔄 سؤال مقترح آخر (مكتبة ضخمة)
+            </button>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-magenta" id="btn-next-question-turn" onclick="App.nextQuestionTurn()">
+                    السؤال التالي ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-vote" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.2rem;">🕵️ تصويت سري</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div style="font-size: 0.8rem; color:#c7d2fe; text-align:center; line-height:1.6;">مرّر الهاتف للاعب الظاهر اسمه بالأسفل، وهو فقط يختار مين شاكك فيه.</div>
+
+            <div class="voter-turn-panel" id="voter-turn-panel" aria-live="polite">
+                <div class="voter-turn-avatar" id="current-voter-avatar">👤</div>
+                <div class="voter-turn-copy">
+                    <div class="voter-turn-kicker">🎤 دور التصويت الحالي</div>
+                    <div class="voter-turn-name" id="current-voter-name">اسم اللاعب</div>
+                    <div class="voter-turn-hint" id="current-voter-hint">سلّم الهاتف لصاحب الدور</div>
+                </div>
+                <div class="voter-turn-counter" id="current-voter-counter">1 / 1</div>
+            </div>
+
+            <div class="voter-selection" id="voting-buttons-container"></div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-magenta" id="btn-submit-vote" onclick="App.submitVote()" style="display:none;">
+                    تأكيد التصويت وتمرير الهاتف ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-cinematic" class="screen">
+            <div class="cinematic-stage">
+                <div class="cinematic-overlay"></div>
+                <div class="brand-logo" style="font-size: 1.25rem;">MARO GAMES PRO</div>
+                <div class="suspense-title" id="cinematic-suspense-title">🔍 لحظة الحقيقة - مراجعة الأسماء...</div>
+
+                <div class="sequential-names-container" id="sequential-names-box"></div>
+
+                <div class="reveal-card" id="cinematic-card" style="display: none;">
+                    <div class="reveal-avatar-box" id="cinematic-avatar">❓</div>
+                    <div class="reveal-name" id="cinematic-name">...</div>
+                    <div class="reveal-badge" id="cinematic-badge">🕵️ المتهم الأول</div>
+                </div>
+
+                <div id="cinematic-status" style="font-size: 0.95rem; color:#00dfd8; margin-top:12px; font-weight:bold; min-height:25px; text-shadow: var(--glow-cyan);">
+                    جاري فحص أصوات اللاعبين...
+                </div>
+
+                <button class="btn btn-glass btn-glass-magenta" id="btn-cinematic-continue" onclick="App.proceedAfterCinematic()" style="display:none; margin-top:15px;">
+                    متابعة النتيجة ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-guess" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.15rem;">🧠 فرصة التخمين</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div style="font-size: 0.8rem; color:#c7d2fe; text-align:center;" id="guess-imposter-name">خمن الكلمة الصح من الاختيارات لتكسب النقاط!</div>
+
+            <div class="voter-selection" id="guess-options-container" style="max-height: 50vh;"></div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-magenta" id="btn-submit-guess" onclick="App.submitImposterGuess()" style="display:none;">
+                    تأكيد التخمين ورؤية النتيجة ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-results" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.2rem;">🏆 نهاية الجولة</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div class="round-summary" id="round-summary-box" style="width:100%; background:var(--card-glass); backdrop-filter:blur(10px); padding:12px; border-radius:16px; border:1px solid rgba(255,255,255,0.15); margin-bottom:8px;"></div>
+
+            <div class="leaderboard" id="leaderboard-container"></div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-magenta" onclick="App.launchGameRound()">
+                    🔄 جولة جديدة بنفس اللاعبين
+                </button>
+                <button class="btn btn-glass" style="padding:10px; font-size:0.9rem;" onclick="App.navigateTo('screen-menu')">
+                    🏠 القائمة الرئيسية
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-stats" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.2rem;">🏆 قائمة المتصدرين</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div class="leaderboard" id="global-leaderboard-container" style="max-height: 55vh;"></div>
+
+            <button class="btn btn-glass" style="padding:10px; font-size:0.9rem;" onclick="App.navigateTo('screen-menu')">
+                العودة للقائمة
+            </button>
+        </div>
+
+        <div id="screen-settings" class="screen">
+            <div class="header-bar">
+                <div class="hamburger-btn" onclick="App.toggleDrawer(true)">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="brand-header" style="margin: 0;">
+                    <div class="screen-title" style="font-size: 1.2rem;">⚙️ الإعدادات</div>
+                </div>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div style="width: 100%;">
+                <div class="setting-row">
+                    <span>🔊 المؤثرات الصوتية</span>
+                    <input type="checkbox" id="setting-sound" class="toggle" checked onchange="App.toggleSound(this.checked)">
+                </div>
+                <div class="setting-row">
+                    <span>✨ المؤثرات البصرية والخلفية</span>
+                    <input type="checkbox" id="setting-effects" class="toggle" checked onchange="App.toggleEffects(this.checked)">
+                </div>
+            </div>
+
+            <div style="width: 100%;">
+                <button class="btn btn-glass btn-glass-gold" style="margin-bottom:8px; padding:12px; font-size:0.95rem;" onclick="App.resetScoresOnly()">
+                    🎯 تصفير النقاط فقط
+                </button>
+                <button class="btn btn-glass btn-glass-red" style="margin-bottom:8px; padding:12px; font-size:0.95rem;" onclick="App.resetAllData()">
+                    🗑️ مسح الذاكرة وإعادة الضبط
+                </button>
+                <button class="btn btn-glass" style="padding:10px; font-size:0.9rem;" onclick="App.navigateTo('screen-menu')">
+                    حفظ والعودة
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal" id="player-modal">
+        <div class="modal-content">
+            <div style="font-size: 1.2rem; font-weight: bold; text-align: center;" id="modal-title">سمّي اللاعب</div>
+            
+            <div style="font-size: 0.8rem; opacity: 0.8;">اختر الشخصية:</div>
+            <div class="avatar-grid" id="modal-avatar-grid"></div>
+
+            <input type="text" id="modal-player-name" maxlength="20" class="modal-input" placeholder="اكتب اسم اللاعب هنا..." value="" maxlength="15">
+
+            <button class="btn btn-glass btn-glass-magenta" onclick="App.savePlayerFromModal()">
+                حفظ اللاعب ✨
+            </button>
+            <button class="btn btn-glass" style="padding: 10px; font-size: 0.9rem;" onclick="App.closeAddPlayerModal()">
+                إلغاء
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+            }
+            playTone(freq, type = 'sine', duration = 0.1, vol = 0.2) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            click() { this.playTone(600, 'sine', 0.05, 0.1); }
+            flip() { this.playTone(400, 'triangle', 0.12, 0.2); }
+            tick() { this.playTone(800, 'square', 0.03, 0.05); }
+            suspense() { this.playTone(130, 'sawtooth', 0.5, 0.3); }
+            boom() { this.playTone(70, 'triangle', 1.0, 0.6); }
+            slowmo() {
+                if (!this.enabled) return;
+                this.playTone(100, 'sine', 2.0, 0.45);
+                setTimeout(() => this.playTone(220, 'triangle', 1.8, 0.35), 400);
+            }
+            spin() {
+                if (!this.enabled) return;
+                for (let i = 0; i < 12; i++) {
+                    setTimeout(() => this.tick(), i * 60);
+                }
+            }
+            win() {
+                if (!this.enabled) return;
+                const notes = [400, 500, 600, 800];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'sine', 0.2, 0.2), idx * 100);
+                });
+            }
+            fail() {
+                if (!this.enabled) return;
+                const notes = [400, 350, 300, 200];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'sawtooth', 0.25, 0.2), idx * 120);
+                });
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        class BackgroundEngine {
+            constructor() {
+                this.canvas = document.getElementById('bg-canvas');
+                this.ctx = this.canvas ? this.canvas.getContext('2d', { alpha: false }) : null;
+                this.particles = [];
+                this.active = true;
+                this.running = false;
+                this.frame = 0;
+                this.raf = 0;
+                this.resize();
+                this.initParticles();
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.initParticles();
+                }, { passive: true });
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.running = false;
+                        if (this.raf) cancelAnimationFrame(this.raf);
+                        this.raf = 0;
+                    } else if (this.active) this.render();
+                });
+            }
+            resize() {
+                if (!this.canvas) return;
+                const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+                this.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+                this.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                this.canvas.style.width = window.innerWidth + 'px';
+                this.canvas.style.height = window.innerHeight + 'px';
+            }
+            initParticles() {
+                this.particles = [];
+                const count = Math.min(Math.floor(this.width * this.height / 26000), 16);
+                const colors = ['#ff007f', '#7928ca', '#00dfd8', '#ffca28'];
+                for (let i = 0; i < count; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.width,
+                        y: Math.random() * this.height,
+                        radius: Math.random() * 2 + 1,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        vx: (Math.random() - 0.5) * 0.35,
+                        vy: (Math.random() - 0.5) * 0.35,
+                        alpha: Math.random() * 0.45 + 0.35
+                    });
+                }
+            }
+            setActive(value) {
+                this.active = !!value;
+                if (this.active) this.render();
+                else {
+                    this.running = false;
+                    if (this.raf) cancelAnimationFrame(this.raf);
+                    this.raf = 0;
+                    if (this.ctx) this.ctx.clearRect(0, 0, this.width, this.height);
+                }
+            }
+            render() {
+                if (!this.ctx || !this.active || document.hidden || this.running) return;
+                this.running = true;
+                const draw = () => {
+                    if (!this.active || document.hidden) {
+                        this.running = false;
+                        this.raf = 0;
+                        return;
+                    }
+                    this.frame++;
+                    // 30 FPS is enough for subtle background motion and saves mobile CPU.
+                    if (this.frame % 2 === 0) {
+                        this.ctx.fillStyle = '#0d0818';
+                        this.ctx.fillRect(0, 0, this.width, this.height);
+                        for (const p of this.particles) {
+                            p.x += p.vx;
+                            p.y += p.vy;
+                            if (p.x < 0) p.x = this.width;
+                            if (p.x > this.width) p.x = 0;
+                            if (p.y < 0) p.y = this.height;
+                            if (p.y > this.height) p.y = 0;
+                            this.ctx.globalAlpha = p.alpha;
+                            this.ctx.fillStyle = p.color;
+                            this.ctx.beginPath();
+                            this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                            this.ctx.fill();
+                        }
+                        this.ctx.globalAlpha = 1;
+                    }
+                    this.raf = requestAnimationFrame(draw);
+                };
+                this.raf = requestAnimationFrame(draw);
+            }
+        }
+
+        function setupDrawerSwipe() {
+            const drawer = document.getElementById('side-drawer');
+            if (!drawer) return;
+            let startX = 0, startY = 0, tracking = false;
+            drawer.addEventListener('pointerdown', event => {
+                if (event.pointerType === 'mouse' || !drawer.classList.contains('active')) return;
+                startX = event.clientX;
+                startY = event.clientY;
+                tracking = true;
+                try { drawer.setPointerCapture(event.pointerId); } catch (_) {}
+            });
+            drawer.addEventListener('pointerup', event => {
+                if (!tracking) return;
+                tracking = false;
+                const dx = event.clientX - startX;
+                const dy = event.clientY - startY;
+                if (dx > 48 && dx > Math.abs(dy) * 1.15) App.toggleDrawer(false);
+            });
+            drawer.addEventListener('pointercancel', () => { tracking = false; });
+        }
+
+        const AVATARS = ['👨', '👩', '👦', '👧', '🤖', '🦊', '🦁', '👑', '👽', '🐯', '🐼', '🦄'];
+        const PLAYER_COLORS = ['#ff007f', '#7928ca', '#00dfd8', '#ffca28', '#4caf50', '#ff9800', '#e91e63', '#00bcd4'];
+
+        const CATEGORY_QUESTIONS = {
+            football: ["هل اللاعب ده بيلعب حالياً في الدوري الإنجليزي الممتاز؟", "هل فاز بجائزة الكرة الذهبية؟"],
+            countries: ["هل البلد دي موجودة في قارة إفريقيا؟", "هل اللغة الرسمية هي العربية؟"],
+            gaming: ["هل اللعبة دي تلعب أونلاين بشكل جماعي؟", "هل اللعبة صدرت قبل سنة 2020؟"],
+            movies: ["هل العمل ده فيلم سينمائي ولا مسلسل تلفزيوني؟", "هل التصنيف كوميدي ولا دراما وحكشن؟"],
+            history: ["هل الشخصية التاريخية دي عاصرت العصر الإسلامي؟", "هل الشخصية دي قائد عسكري أو ملك؟"],
+            science: ["هل الاكتشاف ده متعلق بعالم الفضاء والفلك؟", "هل العنصر ده موجود في الجدول الدوري؟"],
+            animals: ["هل الحيوان ده من مفترسات البراري؟", "هل الحيوان ده بيعيش في القطب الشمالي؟"],
+            nature: ["هل الظاهرة دي مرتبطة بطبقات الجو؟", "هل الظاهرة دي تحدث في أعماق البحار؟"],
+            food: ["هل الأكلة دي تعتبر من الوجبات السريعة؟", "هل الوجبة دي مشهورة في الوطن العربي؟"],
+            brands: ["هل الماركة دي متخصصة في الهواتف والتقنية؟", "هل العلامة التجارية دي مشهورة عالمياً؟"],
+            space: ["هل الكوكب ده قريب من الشمس؟", "هل الجسم الفلكي ده يحتوي على حلقات؟"],
+            music: ["هل الآلة الموسيقية دي وترية؟", "هل الأغنية دي صدرت في العقد الأخير؟"],
+            professions: ["هل المهنة دي تتطلب دراسة أكاديمية متخصصة؟", "هل الوظيفة دي مرتبطة بالقطاع الطبي؟"],
+            literature: ["هل العمل الأدبي ده رواية تاريخية؟", "هل الكاتب مصري أو عربي؟"],
+            cars: ["هل السيارة دي تعتبر من السيارات الرياضية الفارهة؟", "هل الشركة المصنعة يابانية أم أوروبية؟"],
+            tech: ["هل الجهاز ده بنستخدمه في إنجاز الأعمال المكتبية؟", "هل التقنية دي تعتمد على الذكاء الاصطناعي؟"]
+        };
+
+        const DEFAULT_QUESTIONS = [
+            "هل الشيء ده موجود في كل بيت ولا أماكن معينة؟",
+            "لو هتوصف الشيء ده بكلمة واحدة من غير ما تقول اسمه، هتقول إيه؟"
+        ];
+
+        // مكتبة أسئلة موسعة: أسئلة عامة مناسبة لمعظم الأقسام، مع أسئلة متخصصة لكل قسم.
+        const EXTRA_GENERAL_QUESTIONS = [
+            "هل الاسم ده مشهور عند ناس كتير؟",
+            "هل ممكن طفل يعرفه بسهولة؟",
+            "هل ليه علاقة ببلد معينة؟",
+            "هل ممكن تلاقيه في مصر؟",
+            "هل الناس بتتكلم عنه كتير؟",
+            "هل كان موجود من أكتر من 20 سنة؟",
+            "هل ظهر أو اشتهر في آخر 10 سنين؟",
+            "هل اسمه بيتكون من كلمتين أو أكتر؟",
+            "هل أول حرف في اسمه من الحروف الأولى في الأبجدية؟",
+            "هل أغلب الناس تعرف شكله أو اسمه؟",
+            "هل ممكن تلاقي عنه معلومات على الإنترنت بسهولة؟",
+            "هل هو مرتبط بحاجة بنستخدمها يومياً؟",
+            "هل ممكن شخص واحد يتعرف عليه من غير مساعدة؟",
+            "هل ليه أكتر من نوع أو شكل؟",
+            "هل فيه ناس بتفضله عن البدائل؟",
+            "هل ممكن يكون مشهور عالمياً؟",
+            "هل شهرته أكبر في العالم العربي؟",
+            "هل له علاقة بالترفيه أو المتعة؟",
+            "هل له علاقة بالتعلم أو المعرفة؟",
+            "هل ممكن تسمع اسمه في الأخبار؟",
+            "هل له علاقة بالتكنولوجيا الحديثة؟",
+            "هل ممكن تلاقيه في كتاب أو موسوعة؟",
+            "هل اسمه سهل النطق؟",
+            "هل ممكن يتشابه مع حاجة تانية في الاسم؟",
+            "هل له تاريخ أو قصة معروفة؟",
+            "هل ارتبط بحدث مهم؟",
+            "هل ممكن تلاقي صور كتير ليه؟",
+            "هل له جمهور أو محبين؟",
+            "هل ممكن يكون موجود في أكتر من دولة؟",
+            "هل الناس بتختلف عليه أو حوله؟",
+            "هل له علاقة بالحياة اليومية؟",
+            "هل ممكن يكون قديم وحديث في نفس الوقت؟",
+            "هل اسمه معروف أكتر من تفاصيله؟",
+            "هل ممكن توصفه من غير ما تقول اسمه؟",
+            "هل لو قلت أول حرفين من اسمه ناس هتخمنه؟",
+            "هل هو شيء ملموس ويمكن لمسه؟",
+            "هل هو شخص أو شخصية؟",
+            "هل هو مكان أو مرتبط بمكان؟",
+            "هل ممكن يظهر في صورة؟",
+            "هل له علاقة بمجال متخصص؟"
+        ];
+
+        const EXTRA_CATEGORY_QUESTIONS = {
+            football: ["هل لعب في منتخب بلاده؟", "هل مركزه هجومي؟", "هل مركزه دفاعي؟", "هل فاز بدوري أبطال أوروبا؟", "هل لعب في أكثر من دوري أوروبي؟", "هل اشتهر بمهارة فردية؟", "هل لعب في نادٍ عربي؟", "هل شارك في كأس العالم؟", "هل اعتزل كرة القدم؟", "هل معروف بلقب غير اسمه؟", "هل لعب في مركز حراسة المرمى؟", "هل فاز ببطولة قارية مع منتخب بلاده؟"],
+            countries: ["هل تقع في قارة أوروبا؟", "هل تطل على بحر أو محيط؟", "هل لها حدود مع مصر؟", "هل عملتها معروفة عربياً؟", "هل تقع في نصف الكرة الجنوبي؟", "هل عاصمتها مدينة ساحلية؟", "هل تشتهر بالسياحة؟", "هل مساحتها كبيرة مقارنة بدول المنطقة؟", "هل يتحدث سكانها أكثر من لغة؟", "هل تشتهر بمعلم تاريخي؟", "هل تقع في قارة آسيا؟", "هل هي دولة عربية؟"],
+            gaming: ["هل يمكن لعبها على الموبايل؟", "هل لها طور لعب جماعي؟", "هل تحتاج اتصالاً بالإنترنت؟", "هل تعتمد على المنافسة؟", "هل منظور اللعب فيها من الشخص الأول؟", "هل فيها عالم مفتوح؟", "هل لها أجزاء أو إصدارات متعددة؟", "هل يمكن لعبها بدون إنترنت؟", "هل هي مناسبة للعب مع الأصدقاء؟", "هل فيها شخصيات قابلة للاختيار؟", "هل صدرت على أجهزة الكمبيوتر؟", "هل تشتهر برسوماتها؟"],
+            movies: ["هل العمل مصري؟", "هل هو كوميدي؟", "هل ينتمي إلى الأكشن؟", "هل صدر بعد سنة 2015؟", "هل له أجزاء متعددة؟", "هل بطل العمل ممثل مشهور؟", "هل قصته مستوحاة من أحداث حقيقية؟", "هل هو مسلسل وليس فيلماً؟", "هل يناسب المشاهدة العائلية؟", "هل فيه شخصية شريرة أساسية؟", "هل اشتهر بجملة أو إفيه؟", "هل عُرض في شهر رمضان؟"],
+            history: ["هل عاش قبل أكثر من ألف سنة؟", "هل كان حاكماً؟", "هل ارتبط اسمه بحرب؟", "هل عاش في مصر؟", "هل كان عالماً أو مفكراً؟", "هل ينتمي إلى العصر الحديث؟", "هل ترك أثراً ما زال موجوداً؟", "هل كان قائداً سياسياً؟", "هل اسمه معروف في المناهج الدراسية؟", "هل ارتبط اسمه بحضارة قديمة؟", "هل كان من خارج العالم العربي؟", "هل توجد عنه كتب أو أفلام؟"],
+            science: ["هل يرتبط بجسم الإنسان؟", "هل يمكن رؤيته بالعين المجردة؟", "هل له علاقة بالكهرباء؟", "هل يُستخدم في الطب؟", "هل يرتبط بالفضاء؟", "هل يمكن إجراء تجربة لإثباته؟", "هل يدرّس في المدارس؟", "هل له علاقة بالطاقة؟", "هل اكتُشف خلال آخر 200 سنة؟", "هل يرتبط بالكيمياء؟", "هل له تطبيق في الحياة اليومية؟", "هل يرتبط بالفيزياء؟"],
+            animals: ["هل يعيش في الماء؟", "هل يستطيع الطيران؟", "هل هو من الثدييات؟", "هل يتغذى على النباتات؟", "هل يعيش في مجموعات؟", "هل يمكن تربيته في المنزل؟", "هل يعيش في الصحراء؟", "هل له فرو أو ريش؟", "هل حجمه أكبر من الإنسان؟", "هل هو من الحيوانات المهددة؟", "هل ينشط غالباً في الليل؟", "هل يعيش في الغابات؟"],
+            nature: ["هل يمكن رؤيتها في السماء؟", "هل تحدث بسبب تغير الطقس؟", "هل ترتبط بالماء؟", "هل يمكن أن تؤثر على البيئة؟", "هل تحدث في فصل معين؟", "هل يمكن التنبؤ بحدوثها؟", "هل ترتبط بالجبال؟", "هل تحدث تحت سطح الأرض؟", "هل يمكن رؤيتها في مصر؟", "هل لها تأثير على النباتات؟", "هل ترتبط بدرجة الحرارة؟", "هل تحدث بشكل طبيعي دون تدخل الإنسان؟"],
+            food: ["هل تؤكل غالباً في الإفطار؟", "هل تعتبر من الحلويات؟", "هل تحتاج إلى طهي؟", "هل تؤكل ساخنة؟", "هل أصلها من بلد عربي؟", "هل تحتوي عادةً على منتجات ألبان؟", "هل يمكن تناولها في الشارع؟", "هل طعمها حلو؟", "هل تقدم في المناسبات؟", "هل يمكن إعدادها في المنزل؟", "هل هي وجبة رئيسية؟", "هل تشتهر بها مصر؟"],
+            brands: ["هل هي شركة إلكترونيات؟", "هل تبيع منتجات في مصر؟", "هل شعارها معروف؟", "هل تأسست قبل سنة 2000؟", "هل منتجاتها غالية نسبياً؟", "هل تعمل في مجال الملابس؟", "هل لها متاجر حول العالم؟", "هل تنتج هواتف؟", "هل اسمها مكون من كلمة واحدة؟", "هل بدأت في دولة آسيوية؟", "هل تقدم خدمات رقمية؟", "هل تنافس شركات عالمية؟"],
+            space: ["هل هو كوكب؟", "هل يدور حول الشمس؟", "هل يمكن رؤيته من الأرض؟", "هل له أقمار؟", "هل هو أبعد من المريخ عن الشمس؟", "هل ينتمي إلى مجرة درب التبانة؟", "هل يتكون أساساً من الغاز؟", "هل أرسلت إليه مركبة فضائية؟", "هل له سطح صلب؟", "هل هو نجم؟", "هل يرتبط باستكشاف الفضاء؟", "هل يستغرق الضوء وقتاً طويلاً للوصول إلينا منه؟"],
+            music: ["هل هي آلة موسيقية؟", "هل تُستخدم في الموسيقى العربية؟", "هل الفنان مصري؟", "هل اشتهر في القرن العشرين؟", "هل نوع الموسيقى سريع الإيقاع؟", "هل يمكن عزفها منفرداً؟", "هل ترتبط بالموسيقى الكلاسيكية؟", "هل الفنان ما زال يقدم أعمالاً؟", "هل هي أغنية مشهورة؟", "هل تعتمد على الإيقاع أكثر من الغناء؟", "هل تُستخدم في الأوركسترا؟", "هل اشتهرت في العالم العربي؟"],
+            professions: ["هل تحتاج إلى شهادة جامعية؟", "هل تعتمد على العمل مع الناس؟", "هل يمكن العمل بها من المنزل؟", "هل تستخدم الكمبيوتر كثيراً؟", "هل ترتبط بالصحة؟", "هل تحتاج إلى تدريب عملي؟", "هل يمكن ممارستها بشكل مستقل؟", "هل تتطلب ارتداء زي خاص؟", "هل ترتبط بالسفر؟", "هل تحتاج إلى مهارة يدوية؟", "هل يعمل أصحابها في مؤسسات حكومية؟", "هل تتطلب اتخاذ قرارات سريعة؟"],
+            literature: ["هل الكاتب عربي؟", "هل العمل مكتوب باللغة العربية؟", "هل هو شعر وليس رواية؟", "هل كُتب قبل القرن العشرين؟", "هل تحول إلى عمل فني؟", "هل ينتمي إلى الأدب العالمي؟", "هل يتناول أحداثاً تاريخية؟", "هل هو جزء من سلسلة؟", "هل مؤلفه مصري؟", "هل يُدرّس في المدارس؟", "هل يتناول موضوعاً اجتماعياً؟", "هل له أكثر من ترجمة؟"],
+            cars: ["هل تعمل بالوقود؟", "هل هي سيارة كهربائية؟", "هل الشركة المصنعة ألمانية؟", "هل هي سيارة رياضية؟", "هل تتسع لأكثر من خمسة أشخاص؟", "هل تشتهر بالسرعة؟", "هل هي من فئة السيارات الاقتصادية؟", "هل تُصنع في اليابان؟", "هل لها إصدار حديث؟", "هل تستخدم في سباقات السيارات؟", "هل هي من السيارات الفاخرة؟", "هل تعمل بنظام الدفع الرباعي؟"],
+            tech: ["هل يمكن استخدامه على الهاتف؟", "هل يعتمد على الإنترنت؟", "هل له علاقة بالذكاء الاصطناعي؟", "هل يستخدم لحماية البيانات؟", "هل هو جهاز مادي؟", "هل يستخدم في البرمجة؟", "هل ظهر خلال آخر عشر سنوات؟", "هل يساعد على توفير الوقت؟", "هل يستخدم في الشركات؟", "هل له علاقة بالشبكات؟", "هل يمكن استخدامه في الألعاب؟", "هل يحتاج إلى تحديثات مستمرة؟"]
+        };
+
+        Object.keys(CATEGORY_QUESTIONS).forEach(categoryId => {
+            const expanded = [...(CATEGORY_QUESTIONS[categoryId] || []), ...EXTRA_GENERAL_QUESTIONS, ...(EXTRA_CATEGORY_QUESTIONS[categoryId] || [])];
+            CATEGORY_QUESTIONS[categoryId] = [...new Set(expanded)];
+        });
+        let suggestedQuestionHistory = {};
+
+        const CATEGORIES_DATA = [
+            { id: 'football', title: 'كرة القدم العالمية', icon: '⚽', color: '#00dfd8', words: ['محمد صلاح', 'ليونيل ميسي', 'كريستيانو رونالدو', 'كريم بنزيما', 'كيليان مبابي', 'نيمار داسيلفا', 'إرلينغ هالاند', 'كيفين دي بروين', 'روبرت ليفاندوفسكي', 'لوكا مودريتش', 'فينيسيوس جونيور', 'جود بيلينغهام', 'هاري كين', 'أنطوان غريزمان', 'برناردو سيلفا', 'بوكايو ساكا', 'ديكلان رايس', 'روبن دياز', 'صلاح محسن', 'محمود حسن تريزيجيه', 'إمام عاشور', 'أحمد سيد زيزو', 'محمد الشناوي', 'مصطفى محمد', 'عمر مرموش', 'طارق حامد', 'محمد النني', 'حسين الشحات', 'أفشة', 'محمود عبد المنعم', 'أشرف بن شرقي', 'علي معلول', 'بيرسي تاو', 'إبراهيما حسن', 'محمود الخطيب', 'حسن شحاتة', 'محمد أبو تريكة', 'حازم إمام', 'المحمودي', 'حسام حسن', 'أحمد شوبير', 'عصام الحضري', 'مختار مختار', 'فاروق جعفر', 'جمال حمزة', 'عبد الستار صبري', 'أحمد حسن', 'ميدو', 'عماد متعب', 'محمد بركات', 'وليد سليمان', 'سيد عبد الحفيظ', 'أحمد فتحي', 'رونالدينيو', 'زين الدين زيدان', 'بيليه', 'دييغو مارادونا', 'يوهان كرويف', 'فرانس بيكنباور', 'باولو مالديني', 'رونالدو الظاهرة', 'لويس فيغو', 'ديفيد بيكهام', 'روبيرتو كارلوس', 'أندري بيرلو', 'تشافي هيرنانديز', 'أندريس إنيستا', 'فرانك لامبارد', 'ستيفن جيرارد', 'تيري هنري', 'دروغبا', 'صامويل إيتو', 'يايا توريه', 'مايكل إيسيان', 'جورج ويا', 'رايان غيغز', 'بول سكولز', 'واين روني', 'زلاتان إبراهيموفيتش', 'سيرجيو راموس', 'كارليس بويول', 'إيكر كاسياس', 'جانلويجي بوفون', 'مانويل نوير', 'روبرتو باجيو', 'غابرييل باتيستوتا', 'فرانشيسكو توتي', 'أليساندرو دل بييرو', 'فابيو كانافارو', 'كاكا', 'رونالد كومان', 'ماركو فان باستن', 'رود خوليت', 'داني ألفيس', 'مارسيلو', 'كاسيميرو', 'توني كروس'] },
+            { id: 'countries', title: 'دول وعواصم العالم', icon: '🌍', color: '#ffca28', words: ['مصر', 'القاهرة', 'السعودية', 'الرياض', 'الإمارات', 'أبوظبي', 'الكويت', 'الكويت', 'قطر', 'الدوحة', 'البحرين', 'المنامة', 'عمان', 'مسقط', 'الأردن', 'عمان', 'لبنان', 'بيروت', 'سوريا', 'دمشق', 'العراق', 'بغداد', 'فلسطين', 'القدس', 'المغرب', 'الرباط', 'تونس', 'تونس', 'الجزائر', 'الجزائر', 'ليبيا', 'طرابلس', 'السودان', 'الخرطوم', 'اليمن', 'صنعاء', 'الصومال', 'مقديشو', 'جيبوتي', 'جيبوتي', 'موريتانيا', 'نواكشوط', 'جزر القمر', 'موروني', 'فرنسا', 'باريس', 'ألمانيا', 'برلين', 'إيطاليا', 'روما', 'إسبانيا', 'مدريد', 'المملكة المتحدة', 'لندن', 'الولايات المتحدة', 'واشنطن', 'كندا', 'أوتاوا', 'البرازيل', 'برازيليا', 'الأرجنتين', 'بوينس آيرس', 'المكسيك', 'مكسيكو', 'اليابان', 'طوكيو', 'الصين', 'بكين', 'كوريا الجنوبية', 'سيول', 'الهند', 'نيودلهي', 'باكستان', 'إسلام آباد', 'تركيا', 'أنقرة', 'إيران', 'طهران', 'روسيا', 'موسكو', 'أوكرانيا', 'كييف', 'بولندا', 'وارسو', 'هولندا', 'أمستردام', 'بلجيكا', 'بروكسل', 'البرتغال', 'لشبونة', 'اليونان', 'أثينا', 'سويسرا', 'برن', 'النمسا', 'فيينا', 'السويد', 'ستوكهولم', 'النرويج', 'أوسلو', 'فنلندا', 'هلسنكي', 'الدنمارك', 'كوبنهاغن', 'أستراليا', 'كانبيرا', 'نيوزيلندا', 'ويلينغتون', 'جنوب إفريقيا', 'بريتوريا', 'نيجيريا', 'أبوجا', 'كينيا', 'نيروبي', 'إثيوبيا', 'أديس أبابا', 'غانا', 'أكرا'] },
+            { id: 'gaming', title: 'عالم الألعاب الإلكترونية', icon: '🎮', color: '#ff007f', words: ['سوبر ماريو', 'ببجي مبايل', 'فورتنايت', 'فيفا FIFA', 'جراند ثفت أوتو GTA', 'ماين كرافت', 'كول آف ديوتي', 'روبلوكس', 'ليج أوف ليجيندز', 'فالورانت', 'أساسينز كريد', 'غود أوف وور', 'سايبربرك 2077', 'ويتشير 3', 'إلدن رينغ', 'زيلدا', 'بوكيمون', 'سونيك', 'باك مان', 'تيتريس', 'مورتال كومبات', 'تيكين', 'ستريت فايتر', 'هالو', 'ديستياني', 'أبريكس', 'مونستر هانتر', 'ريزدنت إيفل', 'سايلنت هيل', 'تومب رايدر', 'أنشارتد', 'ذا لاست أوف آس', 'هورايزون', 'سبايدر مان', 'باتمان آركام', 'ميدال آف هونر', 'باتلفيلد', 'دوتا 2', 'أمونغ آس', 'فال أوت', 'إكس كوم', 'سيفيليشن', 'سيمز', 'أنيمال كراسينغ', 'ماريو كارت', 'سوبر سماش برذرز', 'ميتال جير', 'هيلو كيتي', 'كراش بنديكوت', 'سبايرو', 'رايتشيت آند كلانك', 'ديفل ماي كراي', 'بايونيتذا', 'نيير أوتوماتا', 'دارك سولز', 'بلودبورن', 'سيكيرو', 'ببجي بي سي', 'فري فاير', 'كلاش أو كلاش', 'كلاش رويال', 'براول ستارز', 'صب واي سورفرز', 'تمبل ران', 'كاندي كراش', 'أنجري بيردز', 'بالديز بايسك', 'جنيشن إمباكت', 'هونكاي ستار ريل', 'بلو آركايف', 'فيت غراند أرد', 'بيرسونا 5', 'دراجون كويست', 'فاينل فانتسي', 'ميرورز إيدج', 'ديوس إكس', 'بيوشوك', 'مافيا', 'ماكس بين', 'سليبينغ دوغز', 'يادوكا', 'كوانتم بريك', 'كنترول', 'الآن ألان', 'ديترويت بيكم هيومان', 'هيفي رين', 'بايوند تو سولس', 'أنتل دون', 'ذا ديث إز ناوت', 'أوتلاست', 'أمنيشيا', 'فاستلبيوما', 'سلندر مان', 'غاريز مود', 'تيرافاريا', 'ستارديو فالي', 'هالو نايبر'] },
+            { id: 'movies', title: 'أفلام ومسلسلات وسينما', icon: '🎬', color: '#7928ca', words: ['الفيل الأزرق', 'كازابلانكا', 'صعيدي في الجامعة الأمريكية', 'الناظر', 'إبراهيم الأبيض', 'ولاد رزق', 'الجزيرة', 'بطل الهروب', 'عسل أسود', 'المهندس حسن', 'كده رضا', 'حرامية في كي بي سي', 'اللمبي', 'اللي بالي بالك', 'بوحة', 'سفاح كرموز', 'الخلية', 'الممر', 'كيرة والجن', 'بيت الروبي', 'المرعي البرنس', 'بلد العبيد', 'شوكولاتة', 'عفريت مراتي', 'يوم ملوش لازم', 'تصبح على خير', 'من ۳۰ سنة', 'صاحب السعادة', 'العراف', 'الكبير أوي', 'رأفت الهجان', 'هوانم جاردن سيتي', 'تأملات', 'باب الحارة', 'الارض', 'المصير', 'المهاجر', 'المصيدة', 'العار', 'الكيف', 'جري الوحوش', 'البيضة والحجر', 'التجربة الدنماركية', 'عمارة يعقوبيان', 'حين ميسرة', 'الجزيرة 2', 'واحد من الناس', 'ملاكي إسكندرية', 'الفرقة الإنتحارية', 'باتمان', 'سوبرمان', 'سبايدر مان', 'أفنجرز', 'تيتانيك', 'أفاتار', 'إنترستيلر', 'إنسبشن', 'غلادياتور', 'ماتريكس', 'لورد أوف ذا رينغز', 'هاري بوتر', 'ستار وورز', 'جيمس بوند', 'ميشن إمبوسيبول', 'فاست آند فيوريوس', 'ذا غادفاذر', 'سكارفيس', 'غودفيلاس', 'شوشانك ريمدبتشن', 'فورست غامب', 'فايت كلوب', 'سايلنت هيل', 'سكس أفس', 'صن شاين', 'غرين ميل', 'بالب فيكشن', 'ذا دارك نايت', 'أنترستيلر', 'كازابلانكا العالمي', 'توي ستوري', 'لايون كิง', 'فايندنغ نيمو', 'شريك', 'آيس إيج', 'ماداگاسكار', 'موانا', 'فروزن', 'كوكو', 'وب إند', 'آب', 'وول إي', 'زوتوبيا', 'إنسايد أوت', 'بيغ هيرو 6', 'تارزان', 'سندريلا', 'بياض الثلج', 'الجميلة والوحش', 'علاء الدين', 'الأسد الملك'] },
+            { id: 'history', title: 'شخصيات وأحداث تاريخية', icon: '🏛️', color: '#4caf50', words: ['محمد علي باشا', 'صلاح الدين الأيوبي', 'عمر بن الخطاب', 'أبو بكر الصديق', 'عثمان بن عفان', 'علي بن أبي طالب', 'خالد بن الوليد', 'عمرو بن العاص', 'طارق بن زياد', 'عبد الرحمن الداخل', 'هارون الرشيد', 'المأمون', 'المعتصم بالله', 'قطز', 'بيبرس', 'الظاهر بيبرس', 'سلطان حامد', 'أحمد عرابي', 'مصطفى كامل', 'سعد زغلول', 'مصطفى النحاس', 'الملك فاروق', 'الخديوي إسماعيل', 'جمال عبد الناصر', 'أنور السادات', 'محمد نجيب', 'عبد الحليم حافظ', 'أم كلثوم', 'طه حسين', 'نجيب محفوظ', 'عباس العقاد', 'أحمد شوقي', 'حافظ إبراهيم', 'يوسف إدريس', 'توفيق الحكيم', 'يوليوس قيصر', 'أغسطس قيصر', 'الإسكندر الأكبر', 'نابليون بونابرت', 'تشرشل', 'أدولف هتلر', 'جوزيف ستالين', 'فرانكلين روزفلت', 'أبراهام لينكولن', 'جورج واشنطن', 'توماس جفرسون', 'نيل آرمسترونغ', 'ألبرت أينشتاين', 'إسحاق نيوتن', 'غاليليو غاليلي', 'نيكولا تيسلا', 'توماس إديسون', 'تشارلز داروين', 'سيجموند فرويد', 'أفلاطون', 'أرسطو', 'سقراط', 'ابن سينا', 'ابن خلدون', 'ابن بطوطة', 'الخوارزمي', 'الحسن بن الهيثم', 'جابر بن حيان', 'البيروني', 'الفارابي', 'المسعودي', 'الإدريسي', 'أبو حنيفة النعمان', 'مالك بن أنس', 'الشافعي', 'أحمد بن حنبل', 'البخاري', 'مسلم بن الحجاج', 'عمر بن عبد العزيز', 'معاوية بن أبي سفيان', 'عبد الملك بن مروان', 'الوليد بن عبد الملك', 'هارون الرشيد', 'صلاح الدين', 'نور الدين محمود', 'عماد الدين زنكي', 'ألب ارسلان', 'ملكشاه', 'طغرل بك', 'سليمان القانوني', 'محمد الفاتح', 'بايزيد الأول', 'سليم الأول', 'أحمد ديدات', 'شعراوي', 'مصطفى محمود', 'عمر عبدالرحمن', 'الشيخ محمد متولي الشعراوي', 'أحمد زويل', 'مجدي يعقوب', 'فاروق الباز'] },
+            { id: 'science', title: 'العلوم والفضاء والتكنولوجيا', icon: '🔬', color: '#00bcd4', words: ['ثقب أسود', 'مجرة درب التبانة', 'مجموعة شمسية', 'كوكب الأرض', 'كوكب المريخ', 'كوكب المشتري', 'كوكب زحل', 'كوكب الزهرة', 'كوكب عطارد', 'كوكب أورانوس', 'كوكب نبتون', 'بلوتو', 'القمر الصناعي', 'محطة الفضاء الدولية', 'تلسكوب جيمس ويب', 'تلسكوب هابل', 'صاروخ فضائي', 'مكوك فضاء', 'الجاذبية الأرضية', 'النسبية العامة', 'ميكانيكا الكم', 'السرعة القصوى للضوء', 'الذرة والجزيء', 'الإلكترون والبروتون', 'النيوترون والنيوترينو', 'الحمض النووي DNA', 'الخلية الحية', 'الإنزيمات الحيوية', 'البروتينات والفيتامينات', 'البكتيريا والفيروسات', 'الخلايا الجذعية', 'الهندسة الوراثية', 'الذكاء الاصطناعي', 'التعلم العميق والآلي', 'البيانات الكبرى', 'الحوسبة السحابية', 'الحاسوب الكمومي', 'شبكات الجيل الخامس', 'إنترنت الأشياء', 'الأمن السيبراني', 'سلسلة الكتل بلوكتشين', 'العملات الرقمية', 'الواقع الافتراضي', 'الواقع المعزز', 'الطباعة ثلاثية الأبعاد', 'الروبوتات المتقدمة', 'الطاقة الشمسية', 'طاقة الرياح', 'الطاقة النووية', 'طاقة الهيدروجين الأخضر', 'الاندماج النووي', 'المادة المظلمة', 'الطاقة المظلمة', 'الانفجار العظيم', 'الكون المتعدد', 'الثقوب الدودية', 'النجوم النيوترونية', 'العملاق الأحمر', 'القزم الأبيض', 'المستعر الأعظم سوبرنوفا', 'النيازك والشهب', 'المذنبات الفضائية', 'الغلاف الجوي', 'طبقة الأوزون', 'الاحتباس الحراري', 'التغير المناخي', 'التيارات المحيطية', 'الصفائح التكتونية', 'الزلازل والبراكين', 'موجات تسونامي', 'الحموضة والقاعدية', 'الجدول الدوري', 'العناصر الكيميائية', 'التفاعلات الكيميائية', 'الروابط التساهمية', 'الكهروكيمياء', 'الديناميكا الحرارية', 'الكهرومغناطيسية', 'البصريات والليزرات', 'النانوتكنولوجي', 'المواد فائقة التوصيل', 'التشفير الرقمي', 'الخوارزميات المتقدمة', 'لغات البرمجة', 'بايثون وجافا', 'سي بلس بلس', 'جافا سكريبت', 'التطبيقات الذكية', 'أنظمة التشغيل', 'لينكس وويندوز', 'أندرويد وآي أو إس', 'الشبكات العصبية', 'التنقيب عن البيانات'] },
+            { id: 'animals', title: 'عالم الحيوان والطبيعة', icon: '🦁', color: '#ff9800', words: ['أسد البراري', 'نمر سيبيري', 'فهد أفريقي', 'دب قطبي', 'دب بني', 'ذئب رمادي', 'ثعلب الصحراء', 'ضبع منقط', 'فيل أفريقي', 'زرافة طويلة', 'حمار وحشي', 'وحيد القرن', 'فرس النهر', 'تمساح النيل', 'أفعى الكوبرا', 'ثعبان الأناكوندا', 'سحلية الإغوانا', 'حرباء ملونة', 'سلحفاة بحرية', 'نسر أصلع', 'صقر حر', 'بومة الحظيرة', 'غراب الأسود', 'طريق البطريق', 'نعامة صحراوية', 'طاووس ملكي', 'فلامنجو وردي', 'بجعة بيضاء', 'حوت أزرق', 'قرش أبيض', 'دلفين محيطي', 'أوتار الأوركا', 'أخطبوط عمق', 'قنديل البحر', 'سرطان البحر', 'الجمال العربية', 'حصان عربي أصيل', 'بقرة حلوب', 'خروف أفرع', 'ماعز الجبل', 'خنزير بري', 'أرنب بري', 'سنجاب طائر', 'قندس النهر', 'راكون محتال', 'كنغر الأسترالي', 'دب الكوالا', 'خلد الماء', 'الباندا العملاقة', 'الشمبانزي الذكي', 'غوريلا الجبل', 'إنسان الغابة', 'الليمور الأفريقي', 'الوطواط الطائر', 'النحل العسال', 'النمل الأبيض', 'الفراشة الملكية', 'العقكب السام', 'العنكبوت الصياد', 'الجراد الصحراوي', 'القرش الحوت', 'سمكة التونة', 'سمكة السلمون', 'سمكة المهرج', 'فرس البحر', 'نجم البحر', 'المحار اللؤلؤي', 'الإسفنج البحري', 'الحرباء البرية', 'الكلب الألماني', 'القط السيامي', 'الكلب البلدي', 'القط الشوكي', 'الحمار الوحشي', 'الجاموس البري', 'الغزال العربي', 'الوعل الجبلي', 'السبع الضاري', 'الذئب الأبرق', 'الفهد الصياد', 'الأسد الآسيوي', 'التمساح الأمريكي', 'الأفعى المجلجلة', 'العقرب الأسود', 'الصرصور المنزلي', 'الذبابة المنزلية', 'البعوضة الناقلة', 'القراد الطفيلي', 'القمل المعدي', 'البق المنزلي'] },
+            { id: 'nature', title: 'معالم الطبيعة والجغرافيا', icon: '🏔️', color: '#e91e63', words: ['جبل البرانس', 'جبال الألب', 'جبال الهيمالايا', 'جبال الأنديز', 'جبال روكي', 'جبال أطلس', 'سلسلة جبال البحر الأحمر', 'صحراء الكبرى', 'صحراء الربع الخالي', 'صحراء غوبي', 'صحراء أتاكاما', 'صحراء كالاهاري', 'غابات الأمازون', 'غابات الكونغو', 'الغابات السوداء', 'غابات التايغا', 'نهر النيل العظيم', 'نهر الأمازون', 'نهر المسيسيبي', 'نهر الدانوب', 'نهر الفرات', 'نهر دجلة', 'نهر الراين', 'نهر الفولغا', 'شلالات إجوازو', 'شلالات نياجرا', 'شلالات فيكتوريا', 'البحر الأبيض المتوسط', 'البحر الأحمر', 'البحر الميت', 'بحر قزوين', 'البحر الأسود', 'المحيط الأطلسي', 'المحيط الهادئ', 'المحيط الهندي', 'المحيط المتجمد الشمالي', 'المحيط المتجمد الجنوبي', 'خليج السويس', 'خليج العقبة', 'الخليج العربي', 'خليج المكسيك', 'البحر الكاريبي', 'جزر المالديف', 'جزر هاواي', 'جزر الكناري', 'جزر سيشل', 'جزيرة مدغشقر', 'جزيرة إيبيزا', 'شبه جزيرة سيناء', 'شبه الجزيرة العربية', 'شبه جزيرة البلقان', 'شبه جزيرة القرم', 'وادي النيل', 'وادي الملوك', 'وادي الموت', 'وادي رم', 'وادي حنيفة', 'البحيرات العظمى', 'بحيرة بايكال', 'بحيرة تيتيكاكا', 'بحيرة فيكتوريا', 'بحيرة طبرية', 'بركان إتنا', 'بركان فيزوف', 'بركان كراكاتوا', 'بركان ماونا لوا', 'غابات السافانا', 'سهوب السافانا', 'سهول الإستبس', 'أدغال الأمازون', 'الكهوف الجوفية', 'الأخدود العظيم غراند كانيون', 'الجليد القطبي', 'الأنهار الجليدية', 'الينابيع الساخنة', 'الواحات الصحراوية', 'واحة سيوة', 'واحة الداخلة', 'واحة الخارجة', 'واحة الفرافرة', 'واحة البحرية', 'دلتا النيل', 'مصبات الأنهار', 'الخور البحري', 'المستنقعات الكبرى', 'غابات المانغروف', 'الشعاب المرجانية', 'الحاجز المرجاني العظيم', 'الهضاب الكبرى', 'هضبة إثيوبيا', 'هضبة التبت', 'سهول البامباس', 'السهول الفيضية'] },
+            { id: 'food', title: 'المأكولات والمشروبات العربية والعالمية', icon: '🍲', color: '#8bc34a', words: ['كشري مصري', 'فلافل وفول مدمس', 'ملوخية بالأرانب', 'حمام محشي', 'فتة الشاورما', 'كبسة سعودية', 'منسف أردني', 'مندي اليمني', 'مظبي ولحم حنيذ', 'برياني هندي', 'مسخن فلسطيني', 'مقلوبة دجاج', 'تبولة وفتوش', 'ورق عنب محشي', 'ممبار وكرشة', 'كبدة الإسكندراني', 'حواوشي بلدي', 'طاجن بامية', 'مسقعة بالبشاميل', 'بصارة مصرية', 'رقاق باللحمة المفرومة', 'جلاش حلو ومالح', 'كنافة بالمانجو', 'بسبوسة بالقشطة', 'أم علي بالمكسرات', 'قطقوطة وقطايف', 'زلابية ولقمة القاضي', 'بلح الشام', 'عصيدة وتمر', 'قهوة تركية مضبوطة', 'شاي كشري بالنعناع', 'عصير قصب السكر', 'تمر هندي وسوس', 'خروب وعناب', 'قمر الدين رمضاني', 'سوپ الشوربة', 'بيتزا إيطالية', 'باستا وسباغيتي', 'لازانيا باللحم', 'برجر لحم مشوي', 'بطاطس مقلية', 'سوشي ياباني', 'نودلز آسيوية', 'رامن ياباني', 'دجاج كنتاكي', 'تاكو مكسيكي', 'بوريتو وكيساديلا', 'ستيك لحم بقرى', 'سلطة سيزر', 'شوربة عدس أصفر', 'شوربة كريمة الدجاج', 'عصير ليمون بالنعناع', 'عصير مانجو فريش', 'عصير فراولة بالحليب', 'سمك دنيس مشوي', 'جمبري مقلي ومقرمش', 'كابوريا بحرية', 'سبيط مقلي', 'طاجن سي فود', 'جبنة رومي قديمة', 'جبنة بيضاء دمياطي', 'قشطة بلدي وعسل', 'مربى الفراولة والتين', 'عيش بلدي طازج', 'عيش فينو أبيض', 'كرواسون بالشوكلاته', 'دوناتس مزخرفة', 'بان كيك بالعسل', 'وافل بلجيكي', 'آيس كريم فانيليا', 'تشيز كيك فراولة', 'تيراميسو إيطالي', 'فطير مشلتت بالجبنة', 'فطير بالسكر والعسل', 'طعمية مقرمشة', 'بطاطس محمرة', 'شاورما دجاج', 'شاورما لحم', 'شاورما عربي', 'فاهيتا دجاج', 'تشيكن زوكس', 'ناغتس دجاج', 'صوص الثومية', 'صوص الطحينة', 'سلطة خضراء', 'سلطة طماطم', 'مخلل ليمون', 'مخلل جزر وخيار', 'زيتون مخلل', 'شطة حارة', 'دبس الرمان'] },
+            { id: 'brands', title: 'العلامات التجارية والشركات العالمية', icon: '🏢', color: '#ff5722', words: ['شركة أبل', 'مايكروسوفت العالمية', 'جوجل التكنولوجية', 'أمازون للتسوق', 'ميتا فيسبوك', 'نتفليكس للبث', 'تيسلا للسيارات', 'سامسونج الكورية', 'سوني اليابانية', 'نينتندو للترفيه', 'تويوتا للسيارات', 'بي إم دبليو الفارهة', 'مرسيدس بنز', 'أودي الألمانية', 'بورشه الرياضية', 'فيراري الإيطالية', 'لامبورغيني الخارقة', 'رولز رويس', 'بنتلي الفاخرة', 'كوكا كولا', 'بيبسي العالمية', 'ماكدونالدز للوجبات', 'برجر كنج', 'كنتاكي فرايد تشيكن', 'ستاربكس للقهوة', 'نايكي للملابس', 'أديداس الرياضية', 'پوما للملابس', 'زارا للأزياء', 'إتش أند إم', 'غوتشي الفاخرة', 'لويس فيتون', 'شانيل الفرنسية', 'رولكس للساعات', 'نايكي الرياضية', 'تويوتا موتورز', 'هيونداي الكورية', 'كيا موتورز', 'نيسان اليابانية', 'هوندا للسيارات', 'فورد الأمريكية', 'شفروليه الشهيرة', 'جيب الأمريكية', 'لاند روفر', 'رينو الفرنسية', 'بيجو للسيارات', 'سوني بلايستيشن', 'إكس بوكس مايكروسوفت', 'إنتل للمعالجات', 'إم دي إيه للتقنية', 'إنفيديا للبطاقات', 'كوالكوم للشرائح', 'سيسكو للشبكات', 'آي بي إم للتقنية', 'ديل للحواسيب', 'إتش بي للكمبيوتر', 'لينوفو الصينية', 'أسوس للحواسيب', 'إم إس آي للألعاب', 'تويتر إكس', 'تيك توك الشهير', 'انستجرام الرقمي', 'يوتيوب الفيديوهات', 'سناب شات', 'لينكد إن المهني', 'تليجرام المراسلة', 'واتساب المحادثات', 'سبوتيفاي للموسيقى', 'ديزني للترفيه', 'يونيفرسال بيكتشرز', 'وارنر برذرز', 'باراماونت بيكتشرز', 'مترو غولدوين ماير', 'بي بي سي الإخبارية', 'سي إن إن العالمية', 'ناشيونال جيوغرافيك', 'فوكس الإخبارية', 'إيكيا للأثاث', 'زارا هوم', 'لرويال ميريديان', 'ماريوت الفندقية', 'هيلتون العالمية', 'راديسون بلو', 'كارفور للتسوق', 'ولمارت الأمريكية', 'إليكسر للقهوة', 'ريد بول للمشروبات'] },
+            { id: 'space', title: 'الفلك والكون والأبراج', icon: '🌌', color: '#9c27b0', words: ['برج الحمل', 'برج الثور', 'برج الجوزاء', 'برج السرطان', 'برج الأسد', 'برج العذراء', 'برج الميزان', 'برج العقرب', 'برج القوس', 'برج الجدي', 'برج الدلو', 'برج الحوت', 'مجرة المرأة المسلسلة', 'مجرة السحابة المجلانية', 'مجرة سومبريرو', 'سديم الجبار', 'سديم السرطان', 'سديم العين', 'ثقب الأبيض', 'الثقوب الدودية', 'الجاذبة الكبرى', 'إشعاع الخلفية الكونية', 'الانفجار العظيم', 'السرعة المدارية', 'السنة الضوئية', 'الفضاء الخارجي', 'الرياح الشمسية', 'التوهج الشمسي', 'الكسوف الشمسي', 'الخسوف القمري', 'محطة الفضاء الدولية', 'المركبة أبولو', 'رحلة المريخ', 'الجاذبية الصغرى', 'الشهب النيزكية', 'زوابع المشتري', 'حلقات زحل', 'براكين المريخ', 'قمر الإيو', 'قمر تايتان', 'قمر أوروبا', 'قمر غانيميد', 'النجم القطبى', 'نجم الشعرى اليمانية', 'نجم السماك الرامح', 'نجم المنكب الجوزاء', 'مجموعات النجوم', 'المجرة الحلزونية', 'المجرة الإهليلجية', 'المجرة غير المنتظمة', 'المادة المظلمة الباردة', 'الطاقة المظلمة المتسارعة', 'توسع الكون', 'عمر الكون', 'الثقب الأسود الهائل', 'قرص التبرعم', 'النيازك الحديدية', 'النيازك الصخرية', 'المذنبات الجليدية', 'سحابة أورت', 'حزام كاييبر', 'الكواكب الصخرية الداخلية', 'الكواكب الغازية الخارجية', 'العملاق الجليدي', 'عالم الكواكب الخارجية', 'الكواكب الصالحة للحياة', 'البحث عن حياة ذكية', 'إشارات الراديو الفضائية', 'تلسكوب جيمس وب', 'مرصد أتاكاما', 'مسبار فوييجر', 'رحلة كاسيني', 'مسبار نيوهورايزنز', 'روفر كيريوسيتي', 'برسيفيرانس', 'طائرة الهليكوبتر إنجينيوستي', 'بدلة الفضاء المحمولة', 'رواد الفضاء الأبطال', 'نيلي آرمسترونغ', 'يوري جاجارين', 'فالنتينا تيريشكوفا', 'أحمد زويل الفضاء', 'سلطان النيادي', 'هزاع المنصوري', 'فاروق الباز الجيولوجي', 'مختبر الدفع النفاث ناسا', 'وكالة الفضاء الأوروبية', 'وكالة الفضاء الروسية', 'وكالة الفضاء الصينية', 'برنامج أرتميس القمرى', 'رحلة العودة للقمر'] },
+            { id: 'music', title: 'الموسيقى والفنون والآلات', icon: '🎵', color: '#3f51b5', words: ['آلة العود الأصيل', 'آلة القانون الشرقية', 'آلة الناي الحزينة', 'آلة الكمان الساحرة', 'آلة البيانو الكلاسيكية', 'آلة الجيتار الكهربائي', 'آلة الدرامز الإيقاعية', 'آلة القانون الموسيقية', 'آلة الرِق الشرقي', 'آلة الطبلة البلدي', 'آلة الناي البابلي', 'آلة التشيلو العميق', 'آلة الساكسفون الجاز', 'آلة الترامبيت النحاسية', 'آلة الأكورديون الشعبي', 'آلة الكلارينيت', 'موسيقار الأجيال', 'محمد عبد الوهاب', 'رياض السنباطي', 'بليغ حمدي', 'كمال الطويل', 'محمد الموجي', 'عمار الشريعي', 'عمر خيرت', 'منير مراد', 'سيد مكاوي', 'فريد الأطرش', 'أسمهان الفنية', 'ليلى مراد', 'شادية المطربة', 'صباح الجزائرية', 'وردة الجزائرية', 'فايزة أحمد', 'نجاة الصغيرة', 'عايدة الشاعر', 'أحمد عدوية', 'محمد منير', 'عمرو دياب', 'تامر حسني', 'محمد حماقي', 'شيرين عبد الوهاب', 'أنغام الموسيقى', 'أصالة نصري', 'إليسا اللبنانية', 'نانسي عجرم', 'هيفاء وهبي', 'كاظم الساهر', 'مجد القاسم', 'عاصي الحلاني', 'راغب علامة', 'وائل جسار', 'وائل كفوري', 'ملحم زين', 'جورج وسوف', 'مستشار الطرب', 'عبد الله رويشد', 'ماجد المهندس', 'نبيل شعيل', 'راشد الماجد', 'محمد عبده', 'عبد المجيد عبد الله', 'عبادي الجوهر', 'رابح صقر', 'أبو بكر سالم', 'طلال مداح', 'حسين الجسمي', 'أحلام الشامسي', 'نوال الكويتية', 'بلقيس فتحي', 'داليا مبارك', 'أسماء لمنور', 'سعد لمجرد', 'دوزح المغربي', 'الشاب مامي', 'الشاب خالد', 'رأي جزائري', 'موسيقى الراي', 'الموسيقى الأندلسية', 'الموشحات الحلبية', 'القصائد الصوفية', 'الأوبرا المصرية', 'دار الأوبرا السلطانية', 'مسرح برودواي', 'مسرح الهرم', 'مهرجان الموسيقى العربية', 'مهرجان جش', 'ليالي الأنس', 'حفلات كليوباترا', 'أغاني الكورال', 'الفرق الموسيقية', 'الأوركسترا السيمفونية'] },
+            { id: 'professions', title: 'المهن والوظائف والأعمال', icon: '💼', color: '#009688', words: ['طبيب بشري مقيم', 'طبيب أسنان جراح', 'صيدلي إكلينيكي', 'مهندس مدني معماري', 'مهندس برمجيات حاسوب', 'مهندس ميكانيكا سيارات', 'مهندس كهرباء طاقة', 'محامٍ ومستشار قانوني', 'قاضٍ في محكمة', 'محاسب قانوني مالي', 'مدرس ومعلم جيل', 'أستاذ جامعي أكاديمي', 'صحفي وإعلامي حر', 'مذيع راديو وتلفزيون', 'مصمم جرافيك رقمي', 'مبرمج ومطور ويب', 'طيار مدني محترف', 'مضيفة طيران جوية', 'شرطي وضابط أمن', 'جندي ومقاتل حربي', 'إطفائي إنقاذ سريع', 'ممرض ومسعف طوارئ', 'باحث علمي مخبري', 'مترجم لغات فورية', 'مهندس ديكور فني', 'رسام وفنان تشكيلي', 'نحات ومبدع آثار', 'ممثل ومسرحي محترف', 'مخرج سينمائي وتلفزيوني', 'كاتب وروائي أدبي', 'شاعر وكاتب قصائد', 'موسيقي وعازف فرقة', 'مغني ومطرب شهير', 'رياضي ولاعب محترف', 'مدرب كرة قدم', 'حكم مباراة دولي', 'صحفي استقصائي', 'مصور فوتوغرافي', 'صانع محتوى رقمي', 'خبير تسويق إلكتروني', 'مدير مشاريع تقنية', 'محلل بيانات كبرى', 'مستشار إداري وبشري', 'رجل أعمال ومستثمر', 'تاجر وصانع محلي', 'صائغ ذهب ومجوهرات', 'نجار محترف ومصمم', 'حداد وورشة معدنية', 'كهربائي منازل وصناعة', 'سباك ومدن صحية', 'ميكانيكي سيارات', 'عامل بناء وعمارة', 'مزارع وفلاح أصيل', 'صياد أسماك بحري', 'خباز ومعجن أصلي', 'طهاة وشرط مطبخ', 'حلاق ومصفف شعر', 'خياط ومصمم أزياء', 'بائع متجول حر', 'أمين مكتبة وباحث', 'مرشد سياحي تاريخي', 'مترجم لغة الإشارة', 'أخصائي نفسي وعلاجي', 'أخصائي تغذية صحية', 'مدرب لياقة بدنية', 'رائد فضاء علمي', 'عالم فلك وفيزياء', 'عالم أحياء وجينوم', 'عالم كيمياء وتفاعلات', 'مراقب طيران جوي', 'محقق جنائي بوليسي', 'رجل إطفاء وبطولة', 'عامل نظافة وخدمة', 'سائق حافلة وتاكسي', 'موظف استقبال وتنسيق', 'سكرتير تنفيذي إداري', 'أمين صندوق بنكي', 'صراف آلي ومالي', 'مراقب جودة تصنيع', 'مهندس بترول ومعادن', 'جيولوجي وباحث أرضي', 'عالم آثار وتنقيب'] },
+            { id: 'literature', title: 'الأدب والروايات والشعر', icon: '📚', color: '#795548', words: ['رواية الثلاثية', 'بين القصرين', 'قصر الشوق', 'السكرية', 'رواية أولاد حارتنا', 'رواية اللص والكلاب', 'رواية الحرافيش', 'رواية زقاق المدق', 'رواية البوسطجي', 'رواية دعاء الكروان', 'رواية الأيام لطه حسين', 'رواية إبراهيم الكاتب', 'رواية عودة الروح', 'رواية يوميات نائب في الأرياف', 'رواية أرض الإله', 'رواية الفيل الأزرق', 'رواية هيبتا', 'رواية تراب الماس', 'رواية الفازلين الأبيض', 'رواية في ممر الخفافيش', 'رواية عازفة الة الكمان', 'شعر المتنبي وحكمته', 'شعر أبو تمام والبحتري', 'ديوان الشاعر أحمد شوقي', 'قصائد حافظ إبراهيم', 'شعر أمل دنقل', 'قصائد نزار قباني', 'شعر محمود درويش', 'قصائد أحمد مطر', 'رواية البؤساء لفيكتور هوغو', 'رواية الحرب والسلالم', 'رواية الجريمة والعقاب', 'رواية الحرب والسلام', 'رواية آنا كارنينا', 'رواية مئة عام من العزلة', 'رواية الشيخ والبحار', 'رواية الكوميديا الإلهية', 'رواية الكيميائي لباولو كويلو', 'رواية شفرة دافنشي', 'رواية هاري بوتر وحجر الفلاسفة', 'رواية سيد الخواتم', 'رواية الغريب لألبير كامو', 'رواية مسخ فرانز كافكا', 'رواية 1984 لجورج أورويل', 'رواية مزرعة الحيوان', 'ألف ليلة وليلة وسندباد', 'قصص كليلة ودمنة', 'المعلقات السبع الجاهلية', 'ديوان الحماسة لأبي تمام', 'مقامات البديع الهمداني', 'مقامات الحريري الأدبية', 'رواية الأسود يليق بك', 'رواية عابر سرير', 'رواية ذاكرة الجسد', 'رواية نسيان كوم', 'رواية الاسود يليق بك', 'كتاب الأدب الكبير لابن المقفع', 'كتاب البخلاء للجاحظ', 'كتاب الحيوان للجاحظ', 'رسالة الغفران للمعري', 'ديوان الفوائد لابن القيم', 'كتاب طوق الحمامة لابن حزم', 'كتاب العبر لابن خلدون', 'رواية موسم الهجرة إلى الشمال', 'رواية عتبة الألم', 'رواية طفل المطر', 'رواية أرض زيكوك', 'رواية فلتغفري', 'رواية ذات الخمار', 'رواية يوتوبيا لأحمد خالد توفيق', 'رواية ما وراء الطبيعة', 'سلسلة فانتازيا وسفاري', 'رواية السنجاب المغامر', 'رواية قطار الموت', 'شعر ابن الفارض الصوفي', 'رباعيات الخيام', 'قصائد الإمام الشافعي', 'مراثي الخنساء الشهيرة', 'شعر زهير بن أبي سلمى', 'قصائد امرؤ القيس', 'شعر طرفة بن العبد', 'قصائد عنترة بن شداد', 'شعر الحطيئة الساخر'] },
+            { id: 'cars', title: 'السيارات ومركبات المستقبل', icon: '🏎️', color: '#607d8b', words: ['مرسيدس أس كلاس', 'بي إم دبليو الفئة السابعة', 'أودي آي 8 الرياضية', 'بورشه 911 كلاسيك', 'فيراري إف 8', 'لامبورغيني أفينتادور', 'رولز رويس فانتوم', 'بنتلي مولسان الفاخرة', 'تويوتا لاند كروزر', 'نيسان باترول درع الصحراء', 'ميتسوبيشي باجيرو', 'فورد رابتور الشاحنة', 'شيفروليه تاهو وسوبربان', 'جيب رانجلر الصخري', 'لاند روفر ديفندر', 'هيونداي توسان وسانتافي', 'كيا سبورتاج وسورينتو', 'تويوتا كامري وكورولا', 'هوندا أكورد وسيفيك', 'مازدا 6 و سي إكس', 'هيونداي النترا', 'نيسان صني وإكس تريل', 'بيجو 3008 و 5008', 'رينو داستر وميجان', 'فورد مصطفى الرياضية', 'شيفروليه كمارو الفارهة', 'دودج تشارجر وتالنت', 'تسلا موديل إس و إكس', 'تسلا سايبرتراك الكهربائية', 'ريڤيان شاحنة المستقبل', 'لوسيد آير الكهربائية', 'نِو إي إيه تي', 'بي واي دي الصينية', 'جيلي أوتوموبيل', 'شيري تيجو العائلية', 'هافال إتش 6', 'شانجان إيدو وسي إكس', 'غريت وول شاحنات', 'بنتلي باتايا', 'أستون مارتن دي بي 11', 'ماكلارين 720 إس', 'بوغاتي شيرون الخارقة', 'كوينيجسيغ أجيرا', 'باغاني هورايا', 'لكزس إل إكس وجي إس', 'إنفينيتي كيو إكس', 'أكورا إم دي إكس', 'جينيسيس جي 90', 'كاديلاك اسكاليد', 'لينカーن نيفيجيتور', 'همر إي في الكهربائية', 'رام 1500 الشاحنة', 'جี إم سي سييرا', 'تويوتا هايلاكس', 'إيسوزو ديمكس', 'ميتسوبيثي L200', 'سوزوكي جيمي الصغيرة', 'سوبارو دبليو آر إكس', 'ميني كوبر البريطانية', 'فولكس فاجن جولف وباسات', 'سيات ليون وإبيزا', 'سكودا أوكتافيا وسوبرب', 'السيارات الطائرة المستقبلية', 'السيارات ذاتية القيادة', 'سيارات الهيدروجين النظيفة', 'سيارات الدفع الرباعي الفارهة', 'السيارات الرياضية الخارقة', 'سيارات السيدان العائلية', 'سيارات الهاتشباك الصغيرة', 'سيارات الكروس أوفر الحديثة', 'شاحنات النقل الثقيل', 'الحافلات الكهربائية', 'القطارات السريعة المقاتلة', 'الدراجات النارية الرياضية', 'هارلي ديفيدسون الشهيرة', 'دراجات دوكاتي الإيطالية', 'دراجات ياماها وسوزوكي', 'سباقات الفورمولا 1', 'سباقات الرالي الصحراوي', 'بطولة لومان 24 ساعة', 'سباقات ناسكار الأمريكية', 'معارض السيارات الدولية', 'تعديل السيارات الرياضية', 'محركات الاحتراق الداخلي', 'محركات السيارات الكهربائية', 'بطاريات الليثيوم أيون', 'أنظمة الفرامل المانعة للانغلاق', 'وسائد الهواء الأمنية', 'أنظمة القيادة الآلية', 'رادارات السيارات الذكية'] },
+            { id: 'tech', title: 'التقنية والابتكارات الرقمية', icon: '💻', color: '#2196f3', words: ['الذكاء الاصطناعي التوليدي', 'التعلم العميق للآلة', 'الشبكات العصبية الاصطناعية', 'معالجة اللغات الطبيعية', 'رؤية الكمبيوتر والذكاء', 'البيانات الضخمة وتحليلها', 'الحوسبة السحابية الموزعة', 'الحوسبة الكمومية المتقدمة', 'شبكات الجيل السادس 6G', 'إنترنت الأشياء الصناعي', 'الأمن السيبراني والدفاع', 'سلسلة الكتل بلوكتشين', 'العملات المشفرة الرقمية', 'الواقع الافتراضي في آر', 'الواقع المعزز إيه آر', 'الواقع المختلط إم آر', 'الطباعة ثلاثية الأبعاد 3D', 'الروبوتات المستقلة الذكية', 'الطائرات بدون طيار درونز', 'السيارات ذاتية القيادة بالكامل', 'الأجهزة القابلة للارتداء', 'الساعات الذكية المتقدمة', 'النظارات الذكية المعززة', 'المعالجات فائقة السرعة', 'الشرائح السيليكونية الذكية', 'أنظمة التشغيل المفتوحة', 'نظام لينكس الموزع', 'أنظمة أندرويد الحديثة', 'نظام آي أو إس الذكي', 'تطبيقات الويب التفاعلية', 'لغات البرمجة الحديثة', 'بايثون للذكاء الاصطناعي', 'جافا سكريبت للويب', 'سي بلس بلس للألعاب', 'تطوير الألعاب الإلكترونية', 'محرك يونيتي الشهير', 'محرك أنريل إنجن', 'قواعد البيانات العلائقية', 'قواعد البيانات غير العلائقية', 'التخزين السحابي الآمن', 'خوادم الويب السريعة', 'أنظمة الحماية والجدران النارية', 'التشفير التام بين الطرفين', 'بروتوكولات الإنترنت الآمنة', 'الإنترنت المظلم والعميق', 'منصات التواصل الاجتماعي', 'خوارزميات التوصية الذكية', 'التسويق الرقمي المبرمج', 'التجارة الإلكترونية المتقدمة', 'بوابات الدفع الإلكتروني', 'المحافظ الرقمية الذكية', 'تقنية التعرف على الوجوه', 'المصادقة الثنائية الآمنة', 'إنترنت الأقمار الصناعية', 'شبكة ستارلينك الفضائية', 'مراكز البيانات الضخمة', 'تبريد الخوادم المتقدم', 'الطاقة المتجددة لمراكز البيانات', 'الأتمتة الكاملة للمصانع', 'المصانع الذكية روبوتياً', 'المنازل الذكية المتكاملة', 'إنترنت الأشياء المنزلي', 'التحكم الصوتي الذكي', 'مساعدات الصوت الافتراضية', 'سيري وجوجل أسيستانت', 'اليكسا من أمازون الذكية', 'الشرجات اللاسلكية السريعة', 'الشحن السريع بالبطاريات', 'تقنية البطاريات الصلبة', 'اللوحات الشفافة الرقمية', 'الشاشات القابلة للطي', 'الواقع الهولوجرامي المجسم', 'تقنية النانو التكنولوجية', 'المواد الذكية المتكيفة', 'الروبوتات النانوية الطبية', 'الطباعة الحيوية للأعضاء', 'الرقاقات الدماغية العصبية', 'نيورالينك والاتصال الذهني', 'المحاكاة الافتراضية للكون', 'التوائم الرقمية للمدن', 'المدن الذكية المستدامة', 'إدارة المرور بالذكاء الاصطناعي', 'أنظمة الطاقة الذكية المتكاملة', 'تقنية احتجاز الكربون', 'ابتكارات الاقتصاد الدائري', 'مختبرات الأبحاث التقنية', 'حضانات الشركات الناشئة', 'الاستثمار الجريء التقني'] }
+        ];
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+
+        // اختيار الكلمة حسب مستوى الصعوبة. الصعوبة تؤثر على الكلمة فقط، لا على عدد الأدوار.
+        const ANIMAL_WORDS_BY_DIFFICULTY = {
+            easy: ['أسد البراري', 'فيل أفريقي', 'زرافة طويلة', 'قطة', 'كلب', 'حصان عربي أصيل', 'بقرة حلوب', 'أرنب بري', 'دب قطبي', 'قرد', 'تمساح النيل', 'دلفين محيطي', 'بطريق', 'نحلة'],
+            medium: ['ثعلب الصحراء', 'ضبع منقط', 'وحيد القرن', 'فرس النهر', 'أفعى الكوبرا', 'حرباء ملونة', 'سلحفاة بحرية', 'طاووس ملكي', 'فلامنجو وردي', 'قندس النهر', 'راكون محتال', 'كنغر الأسترالي', 'غوريلا الجبل', 'فرس البحر'],
+            hard: ['خلد الماء', 'الليمور الأفريقي', 'الأكسولوتل', 'آكل النمل الحرشفي', 'سمكة أبو الشص', 'قرش العفريت', 'الأخطبوط دامبو', 'الضفدع السام الأزرق', 'ظبي السايغا', 'الوشق الأوراسي', 'كابيبارا', 'طائر الكيوي', 'سمكة المجداف', 'خنزير الأرض']
+        };
+
+        function getWordForDifficulty(category, difficulty) {
+            const words = Array.isArray(category?.words) ? category.words : [];
+            if (!words.length) return 'كلمة غامضة';
+            if (category.id === 'animals') {
+                const pool = ANIMAL_WORDS_BY_DIFFICULTY[difficulty] || ANIMAL_WORDS_BY_DIFFICULTY.medium;
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+            // في باقي الأقسام: الكلمات الأقصر والأكثر شيوعاً تميل للسهل، والأطول/الأكثر تخصصاً للصعب.
+            const scored = words.map(word => {
+                const text = String(word);
+                const length = text.replace(/[\sًٌٍَُِّْـ]/g, '').length;
+                const parts = text.trim().split(/\s+/).length;
+                const specialist = /(الأوراسي|السيبيري|الإغريقي|السيمفونية|الجيولوجي|الميكانيكي|الكهرومغناطيسي|الاستوائي|الاستراتيجي|الكمومي|البرمجي|البيولوجي)/.test(text) ? 8 : 0;
+                return { word: text, score: length + parts * 4 + specialist };
+            }).sort((a, b) => a.score - b.score);
+            const third = Math.max(1, Math.ceil(scored.length / 3));
+            let pool;
+            if (difficulty === 'easy') pool = scored.slice(0, third);
+            else if (difficulty === 'hard') pool = scored.slice(-third);
+            else pool = scored.slice(third, Math.max(third + 1, scored.length - third));
+            if (!pool.length) pool = scored;
+            return pool[Math.floor(Math.random() * pool.length)].word;
+        }
+
+        const App = {
+            gameMode: 'multiplayer',
+            players: [],
+            selectedCategory: 'football',
+            selectedDifficulty: 'medium',
+            currentEditingIndex: null,
+            modalSelectedAvatar: AVATARS[0],
+            lastImposterIndex: null,
+
+            roundState: {
+                imposterIndex: null,
+                secretWord: '',
+                currentRoleIndex: 0,
+                selectedWheelWinner: null,
+                isWheelSpun: false,
+                questionTurnIndex: 0,
+                totalQuestionTurns: 0,
+                currentVoterIndex: 0,
+                votes: {},
+                selectedTargetIndex: null,
+                selectedGuessWord: null,
+                votedOutIndex: null
+            },
+
+            init() {
+                this.loadFromStorage();
+                if (!this.players) this.players = [];
+                this.renderMenuStats();
+                this.renderPlayersList();
+                this.renderCategoriesGrid();
+                this.bgEngine = new BackgroundEngine();
+                const savedEffects = localStorage.getItem('maro_pro_effects');
+                if (savedEffects === 'false') this.bgEngine.setActive(false);
+                this.bgEngine.render();
+                setupDrawerSwipe();
+                this.playOpeningIntro();
+            },
+
+            playOpeningIntro() {
+                const overlay = document.getElementById('slowmo-overlay');
+                if (!overlay) return;
+
+                // Always restart the intro from its first frame on a fresh app launch.
+                overlay.classList.remove('active');
+                void overlay.offsetWidth;
+                overlay.classList.add('active');
+
+                // Keep the opening cinematic visible long enough for the slow reveal.
+                window.clearTimeout(this.openingIntroTimer);
+                this.openingIntroTimer = window.setTimeout(() => {
+                    overlay.classList.remove('active');
+                }, 5600);
+            },
+
+            toggleDrawer(show) {
+                const drawer = document.getElementById('side-drawer');
+                const overlay = document.getElementById('drawer-overlay');
+                if (!drawer || !overlay) return;
+                const open = !!show;
+                drawer.classList.toggle('active', open);
+                overlay.classList.toggle('active', open);
+                drawer.setAttribute('aria-hidden', String(!open));
+                overlay.setAttribute('aria-hidden', String(!open));
+                if (open) sound.click();
+            },
+
+            restartCurrentRound() {
+                if (this.players.length < 3) {
+                    alert("يجب إضافة 3 لاعبين على الأقل لبدء الجولة!");
+                    return;
+                }
+                if (confirm("هل تريد إعادة تشغيل الجولة الحالية وتوزيع الأدوار من جديد؟")) {
+                    this.launchGameRound();
+                }
+            },
+
+            showHelpModal() {
+                alert("📖 طريقة اللعب:\n\n1. أضف اللاعبين المشاركين.\n2. اختر القسم المناسب من بين 16 قسمًا.\n3. تعرف على دورك سراً.\n4. شارك في الأسئلة والحوار.\n5. صوت لاكتشاف من هو 'برا السالفة'!");
+            },
+
+            showAboutModal() {
+                alert("🎮 MARO GAMES PRO v6.1\n\nA MARO GAMES Production");
+            },
+
+            triggerSlowMoStart() {
+                const overlay = document.getElementById('start-game-cinematic');
+                if (!overlay) {
+                    this.navigateTo('screen-menu');
+                    return;
+                }
+                if (this.startCinematicRunning) return;
+                this.startCinematicRunning = true;
+                sound.click();
+                overlay.setAttribute('aria-hidden', 'false');
+                overlay.classList.remove('active');
+                void overlay.offsetWidth;
+                overlay.classList.add('active');
+                window.setTimeout(() => {
+                    overlay.classList.remove('active');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    this.navigateTo('screen-menu');
+                    this.startCinematicRunning = false;
+                }, 5400);
+            },
+
+            openDifficultyScreen() {
+                sound.click();
+                this.renderDifficultyCards();
+                this.navigateTo('screen-difficulty');
+            },
+
+            setDifficulty(level) {
+                if (!['easy', 'medium', 'hard'].includes(level)) return;
+                sound.click();
+                this.selectedDifficulty = level;
+                try { localStorage.setItem('maro_pro_difficulty', level); } catch (e) {}
+                this.renderDifficultyCards();
+            },
+
+            renderDifficultyCards() {
+                document.querySelectorAll('.difficulty-card').forEach(card => {
+                    card.classList.toggle('selected', card.dataset.difficulty === this.selectedDifficulty);
+                });
+            },
+
+            loadFromStorage() {
+                try {
+                    const savedPlayers = localStorage.getItem('maro_pro_players');
+                    if (savedPlayers) {
+                        const parsed = JSON.parse(savedPlayers);
+                        this.players = Array.isArray(parsed) ? parsed.slice(0, 12).filter(p =>
+                            p && typeof p.name === 'string' && p.name.trim()
+                        ).map((p, i) => ({
+                            name: p.name.trim().slice(0, 20),
+                            avatar: AVATARS.includes(p.avatar) ? p.avatar : AVATARS[i % AVATARS.length],
+                            color: PLAYER_COLORS.includes(p.color) ? p.color : PLAYER_COLORS[i % PLAYER_COLORS.length],
+                            score: Number.isFinite(Number(p.score)) ? Number(p.score) : 0
+                        })) : [];
+                    }
+                    const savedCat = localStorage.getItem('maro_pro_category');
+                    if (savedCat && CATEGORIES_DATA.some(c => c.id === savedCat)) this.selectedCategory = savedCat;
+                    const savedDifficulty = localStorage.getItem('maro_pro_difficulty');
+                    if (['easy', 'medium', 'hard'].includes(savedDifficulty)) this.selectedDifficulty = savedDifficulty;
+                    const soundPref = localStorage.getItem('maro_pro_sound');
+                    if (soundPref !== null) {
+                        sound.enabled = JSON.parse(soundPref);
+                        document.getElementById('setting-sound').checked = sound.enabled;
+                    }
+                    const effectsPref = localStorage.getItem('maro_pro_effects');
+                    if (effectsPref !== null) {
+                        const eff = JSON.parse(effectsPref);
+                        document.getElementById('setting-effects').checked = eff;
+                        if (this.bgEngine) this.bgEngine.active = eff;
+                    }
+                } catch(e) {
+                    this.players = [];
+                }
+            },
+
+            saveToStorage() {
+                try {
+                    localStorage.setItem('maro_pro_players', JSON.stringify(this.players));
+                    localStorage.setItem('maro_pro_category', this.selectedCategory);
+                    localStorage.setItem('maro_pro_sound', JSON.stringify(sound.enabled));
+                    if (this.bgEngine) {
+                        localStorage.setItem('maro_pro_effects', JSON.stringify(this.bgEngine.active));
+                    }
+                } catch(e) {}
+            },
+
+            navigateTo(screenId) {
+                sound.click();
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const target = document.getElementById(screenId);
+                if (target) {
+                    target.classList.add('active');
+                    target.scrollTop = 0;
+                }
+                this.renderMenuStats();
+            },
+
+            renderMenuStats() {
+                document.getElementById('menu-players-count').textContent = this.players.length;
+                const catObj = CATEGORIES_DATA.find(c => c.id === this.selectedCategory);
+                document.getElementById('menu-selected-cat').textContent = catObj ? catObj.title : 'الكل';
+            },
+
+            startNewGameSequence() {
+                this.gameMode = 'multiplayer';
+                if (this.players.length < 3) {
+                    this.navigateTo('screen-players');
+                } else {
+                    this.navigateTo('screen-categories');
+                }
+            },
+
+            renderPlayersList() {
+                const container = document.getElementById('players-list-container');
+                container.innerHTML = '';
+                document.getElementById('player-counter-badge').textContent = `عدد اللاعبين: ${this.players.length} / 12`;
+
+                if (this.players.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 30px 15px; opacity: 0.6; font-size: 0.9rem;">📭 قائمة اللاعبين فارغة تماماً.<br>اضغط على زر (إضافة لاعب جديد) للبدء!</div>`;
+                }
+
+                this.players.forEach((p, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'player-card';
+                    card.innerHTML = `
+                        <div class="player-info">
+                            <div class="player-avatar" style="color: ${p.color};">${p.avatar}</div>
+                            <div class="player-details">
+                                <div class="name">${escapeHTML(p.name)}</div>
+                                <div class="tag">النقاط: ${p.score || 0}</div>
+                            </div>
+                        </div>
+                        <div class="player-actions">
+                            <button class="icon-btn" onclick="App.openEditPlayerModal(${idx})">✏️</button>
+                            <button class="icon-btn" onclick="App.deletePlayer(${idx})">🗑️</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                const addBtn = document.getElementById('btn-add-player');
+                if (this.players.length >= 12) addBtn.classList.add('btn-disabled');
+                else addBtn.classList.remove('btn-disabled');
+
+                const confirmBtn = document.getElementById('btn-confirm-players');
+                if (this.players.length < 3) confirmBtn.classList.add('btn-disabled');
+                else confirmBtn.classList.remove('btn-disabled');
+            },
+
+            openAddPlayerModal() {
+                sound.click();
+                this.currentEditingIndex = null;
+                document.getElementById('modal-title').textContent = 'إضافة لاعب جديد';
+                document.getElementById('modal-player-name').value = '';
+                this.modalSelectedAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+                this.renderModalAvatars();
+                document.getElementById('player-modal').classList.add('active');
+            },
+
+            openEditPlayerModal(idx) {
+                sound.click();
+                this.currentEditingIndex = idx;
+                const p = this.players[idx];
+                document.getElementById('modal-title').textContent = 'تعديل اللاعب';
+                document.getElementById('modal-player-name').value = p.name;
+                this.modalSelectedAvatar = p.avatar;
+                this.renderModalAvatars();
+                document.getElementById('player-modal').classList.add('active');
+            },
+
+            closeAddPlayerModal() {
+                sound.click();
+                document.getElementById('player-modal').classList.remove('active');
+            },
+
+            renderModalAvatars() {
+                const grid = document.getElementById('modal-avatar-grid');
+                grid.innerHTML = '';
+                AVATARS.forEach(av => {
+                    const opt = document.createElement('div');
+                    opt.className = `avatar-option ${av === this.modalSelectedAvatar ? 'selected' : ''}`;
+                    opt.textContent = av;
+                    opt.onclick = () => {
+                        sound.click();
+                        this.modalSelectedAvatar = av;
+                        this.renderModalAvatars();
+                    };
+                    grid.appendChild(opt);
+                });
+            },
+
+            savePlayerFromModal() {
+                const nameInput = document.getElementById('modal-player-name').value.trim().replace(/\s+/g, ' ').slice(0, 20);
+                if (!nameInput) {
+                    alert("يا برنس لازم تكتب اسم اللاعب!");
+                    return;
+                }
+                const duplicate = this.players.some((p, i) =>
+                    i !== this.currentEditingIndex && p.name.trim().toLocaleLowerCase() === nameInput.toLocaleLowerCase()
+                );
+                if (duplicate) {
+                    alert("الاسم ده موجود بالفعل، اختار اسم مختلف.");
+                    return;
+                }
+                if (this.currentEditingIndex !== null) {
+                    this.players[this.currentEditingIndex].name = nameInput;
+                    this.players[this.currentEditingIndex].avatar = this.modalSelectedAvatar;
+                } else {
+                    if (this.players.length >= 12) return;
+                    const newColor = PLAYER_COLORS[this.players.length % PLAYER_COLORS.length];
+                    this.players.push({ name: nameInput, avatar: this.modalSelectedAvatar, color: newColor, score: 0 });
+                }
+                this.saveToStorage();
+                this.renderPlayersList();
+                this.closeAddPlayerModal();
+            },
+
+            deletePlayer(idx) {
+                sound.click();
+                this.players.splice(idx, 1);
+                this.saveToStorage();
+                this.renderPlayersList();
+            },
+
+            renderCategoriesGrid() {
+                const container = document.getElementById('categories-grid-container');
+                container.innerHTML = '';
+                CATEGORIES_DATA.forEach(cat => {
+                    const card = document.createElement('div');
+                    card.className = `category-card ${cat.id === this.selectedCategory ? 'selected' : ''}`;
+                    card.style.setProperty('--cat-color', cat.color);
+                    card.onclick = () => {
+                        sound.click();
+                        this.selectedCategory = cat.id;
+                        this.saveToStorage();
+                        this.renderCategoriesGrid();
+                    };
+                    card.innerHTML = `
+                        <div class="checkmark">✓</div>
+                        <div class="category-icon">${cat.icon}</div>
+                        <div class="category-title">${cat.title}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            launchGameRound() {
+                if (this.players.length < 3) {
+                    alert("أضف 3 لاعبين على الأقل قبل بدء اللعبة!");
+                    this.navigateTo('screen-players');
+                    return;
+                }
+                sound.click();
+                const catObj = CATEGORIES_DATA.find(c => c.id === this.selectedCategory) || CATEGORIES_DATA[0];
+                const randomWord = getWordForDifficulty(catObj, this.selectedDifficulty);
+
+                let randomImposter = Math.floor(Math.random() * this.players.length);
+                if (this.players.length > 2 && randomImposter === this.lastImposterIndex) {
+                    randomImposter = (randomImposter + 1) % this.players.length;
+                }
+                this.lastImposterIndex = randomImposter;
+
+                // عدد أدوار الأسئلة ثابت؛ مستوى الصعوبة يغيّر الكلمة السرية فقط.
+                const calculatedTotalTurns = this.players.length * 2;
+
+                this.roundState = {
+                    imposterIndex: randomImposter,
+                    secretWord: randomWord,
+                    difficulty: this.selectedDifficulty,
+                    currentRoleIndex: 0,
+                    selectedWheelWinner: null,
+                    isWheelSpun: false,
+                    questionTurnIndex: 0,
+                    totalQuestionTurns: calculatedTotalTurns,
+                    currentVoterIndex: 0,
+                    votes: {},
+                    selectedTargetIndex: null,
+                    selectedGuessWord: null,
+                    votedOutIndex: null
+                };
+
+                this.showRoleCardForPlayer(0);
+                this.navigateTo('screen-roles');
+            },
+
+            showRoleCardForPlayer(idx) {
+                const nextBtn = document.getElementById('btn-next-role');
+                nextBtn.style.visibility = 'hidden';
+                const innerCard = document.getElementById('role-card-inner');
+                innerCard.classList.remove('flipped');
+                const contentBox = document.getElementById('role-card-content');
+                contentBox.innerHTML = ''; 
+
+                const p = this.players[idx];
+                document.getElementById('role-player-tag').textContent = `اللاعب ${idx + 1} من ${this.players.length}`;
+                document.getElementById('role-player-name').textContent = p.name;
+
+                setTimeout(() => {
+                    if (idx === this.roundState.imposterIndex) {
+                        contentBox.innerHTML = `
+                            <div style="font-size: 3rem;">🕵️</div>
+                            <div class="imposter-text">أنت برا السالفة!</div>
+                            <div style="font-size: 0.85rem; color: #ffca28; margin-top: 12px;">حاول تخمن الكلمة واقنعهم إنك جوه!</div>
+                        `;
+                    } else {
+                        contentBox.innerHTML = `
+                            <div style="font-size: 0.95rem; color: #a5b4fc;">الكلمة السرية هي:</div>
+                            <div class="secret-word">${this.roundState.secretWord}</div>
+                            <div style="font-size: 0.8rem; color: #ffca28; margin-top: 12px;">أنت جوه السالفة!</div>
+                        `;
+                    }
+                }, 100);
+            },
+
+            flipRoleCard() {
+                sound.flip();
+                const innerCard = document.getElementById('role-card-inner');
+                innerCard.classList.toggle('flipped');
+                const nextBtn = document.getElementById('btn-next-role');
+                if (innerCard.classList.contains('flipped')) nextBtn.style.visibility = 'visible';
+                else nextBtn.style.visibility = 'hidden';
+            },
+
+            nextPlayerRole() {
+                sound.click();
+                const nextBtn = document.getElementById('btn-next-role');
+                nextBtn.style.visibility = 'hidden';
+                const innerCard = document.getElementById('role-card-inner');
+                innerCard.classList.remove('flipped');
+
+                this.roundState.currentRoleIndex++;
+                if (this.roundState.currentRoleIndex < this.players.length) {
+                    setTimeout(() => {
+                        this.showRoleCardForPlayer(this.roundState.currentRoleIndex);
+                    }, 250);
+                } else {
+                    this.prepareWheelScreen();
+                    this.navigateTo('screen-wheel');
+                }
+            },
+
+            prepareWheelScreen() {
+                this.roundState.isWheelSpun = false;
+                document.getElementById('btn-spin-wheel').style.display = 'block';
+                document.getElementById('btn-wheel-continue').style.display = 'none';
+                document.getElementById('wheel-result-display').textContent = 'اضغط لتحديد اللاعب البادئ!';
+
+                const canvas = document.getElementById('wheel-canvas');
+                canvas.style.transition = 'none';
+                canvas.style.transform = 'rotate(0deg)';
+                void canvas.offsetWidth;
+                canvas.style.transition = 'transform 5s cubic-bezier(0.15, 0.8, 0.15, 1)';
+                this.drawWheel(0);
+            },
+
+            drawWheel(rotationAngle = 0) {
+                const canvas = document.getElementById('wheel-canvas');
+                const ctx = canvas.getContext('2d');
+                const numSlices = this.players.length;
+                const sliceAngle = (Math.PI * 2) / numSlices;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(120, 120);
+                ctx.rotate(rotationAngle);
+
+                for (let i = 0; i < numSlices; i++) {
+                    const angle = i * sliceAngle;
+                    const p = this.players[i];
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, 115, angle, angle + sliceAngle);
+                    ctx.closePath();
+                    ctx.fillStyle = PLAYER_COLORS[i % PLAYER_COLORS.length];
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#18122b';
+                    ctx.stroke();
+
+                    ctx.save();
+                    ctx.rotate(angle + sliceAngle / 2);
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px Segoe UI';
+                    ctx.fillText(`${p.avatar} ${escapeHTML(p.name)}`, 100, 4);
+                    ctx.restore();
+                }
+                ctx.restore();
+            },
+
+            spinWheel() {
+                if (this.roundState.isWheelSpun) return;
+                this.roundState.isWheelSpun = true;
+                sound.spin();
+
+                const winnerIdx = Math.floor(Math.random() * this.players.length);
+                this.roundState.selectedWheelWinner = winnerIdx;
+
+                const numSlices = this.players.length;
+                const sliceDegree = 360 / numSlices;
+                const targetDegree = 360 * 6 + (360 - (winnerIdx * sliceDegree) - (sliceDegree / 2) - 90);
+
+                const canvas = document.getElementById('wheel-canvas');
+                canvas.style.transform = `rotate(${targetDegree}deg)`;
+
+                setTimeout(() => {
+                    sound.win();
+                    const winner = this.players[winnerIdx];
+                    document.getElementById('wheel-result-display').textContent = `🎉 ${escapeHTML(winner.name)} هو من سيبدأ السؤال!`;
+                    document.getElementById('btn-spin-wheel').style.display = 'none';
+                    document.getElementById('btn-wheel-continue').style.display = 'block';
+                }, 5200);
+            },
+
+            startQuestionsPhase() {
+                sound.click();
+                suggestedQuestionHistory = {};
+                this.roundState.questionTurnIndex = 0;
+                this.renderQuestionTurn();
+                this.navigateTo('screen-questions');
+            },
+
+            renderQuestionTurn() {
+                const total = this.roundState.totalQuestionTurns;
+                const currentTurn = this.roundState.questionTurnIndex;
+
+                const askerIdx = (this.roundState.selectedWheelWinner + currentTurn) % this.players.length;
+                const targetIdx = (askerIdx + 1) % this.players.length;
+
+                const asker = this.players[askerIdx];
+                const target = this.players[targetIdx];
+
+                document.getElementById('asker-name').textContent = asker.name;
+                document.getElementById('asker-avatar').textContent = asker.avatar;
+                document.getElementById('asker-avatar').style.color = asker.color;
+
+                document.getElementById('target-name').textContent = target.name;
+                document.getElementById('target-avatar').textContent = target.avatar;
+                document.getElementById('target-avatar').style.color = target.color;
+
+                const catObj = CATEGORIES_DATA.find(c => c.id === this.selectedCategory);
+                document.getElementById('question-category-label').textContent = `سؤال مقترح لقسم (${catObj ? catObj.title : 'عام'}):`;
+                this.nextSuggestedQuestion();
+            },
+
+            nextSuggestedQuestion() {
+                sound.click();
+                const categoryId = this.selectedCategory;
+                const questionsList = CATEGORY_QUESTIONS[categoryId] || DEFAULT_QUESTIONS;
+                const used = suggestedQuestionHistory[categoryId] || [];
+                let available = questionsList.filter(question => !used.includes(question));
+                // لا نكرر السؤال في نفس الجولة إلا بعد عرض كل أسئلة القسم.
+                if (!available.length) {
+                    suggestedQuestionHistory[categoryId] = [];
+                    available = questionsList.slice();
+                }
+                const q = available[Math.floor(Math.random() * available.length)];
+                suggestedQuestionHistory[categoryId] = [...(suggestedQuestionHistory[categoryId] || []), q];
+                document.getElementById('suggested-question-text').textContent = q;
+            },
+
+            nextQuestionTurn() {
+                sound.click();
+                this.roundState.questionTurnIndex++;
+                if (this.roundState.questionTurnIndex < this.roundState.totalQuestionTurns) {
+                    this.renderQuestionTurn();
+                } else {
+                    this.startVotingPhase();
+                }
+            },
+
+            startVotingPhase() {
+                this.roundState.currentVoterIndex = 0;
+                this.roundState.votes = {};
+                this.renderVoterTurn();
+                this.navigateTo('screen-vote');
+            },
+
+            renderVoterTurn() {
+                const voterIdx = this.roundState.currentVoterIndex;
+                const voter = this.players[voterIdx];
+                if (!voter) return;
+                this.roundState.selectedTargetIndex = null;
+
+                // Make it obvious whose turn it is before anyone chooses a suspect.
+                const voterAvatar = document.getElementById('current-voter-avatar');
+                const voterName = document.getElementById('current-voter-name');
+                const voterHint = document.getElementById('current-voter-hint');
+                const voterCounter = document.getElementById('current-voter-counter');
+                if (voterAvatar) {
+                    voterAvatar.textContent = voter.avatar || '👤';
+                    voterAvatar.style.color = voter.color || '#ffca28';
+                }
+                if (voterName) voterName.textContent = voter.name;
+                if (voterHint) voterHint.textContent = `يا ${voter.name}، اختار اللاعب اللي شاكك إنه برّه السالفة`;
+                if (voterCounter) voterCounter.textContent = `${voterIdx + 1} / ${this.players.length}`;
+
+                const container = document.getElementById('voting-buttons-container');
+                container.innerHTML = '';
+
+                this.players.forEach((p, idx) => {
+                    if (idx === voterIdx) return;
+                    const btn = document.createElement('div');
+                    btn.className = 'vote-btn';
+                    btn.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:1.3rem;">${p.avatar}</span>
+                            <span>${escapeHTML(p.name)}</span>
+                        </div>
+                        <span>🎯</span>
+                    `;
+                    btn.onclick = () => {
+                        sound.click();
+                        document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        this.roundState.selectedTargetIndex = idx;
+                        document.getElementById('btn-submit-vote').style.display = 'block';
+                    };
+                    container.appendChild(btn);
+                });
+
+                const submitButton = document.getElementById('btn-submit-vote');
+                submitButton.textContent = voterIdx === this.players.length - 1
+                    ? 'تأكيد التصويت وعرض النتيجة ➔'
+                    : 'تأكيد التصويت وتمرير الهاتف للاعب التالي ➔';
+                submitButton.style.display = 'none';
+            },
+
+            submitVote() {
+                sound.click();
+                const targetIdx = this.roundState.selectedTargetIndex;
+                if (targetIdx === null) return;
+
+                this.roundState.votes[targetIdx] = (this.roundState.votes[targetIdx] || 0) + 1;
+
+                this.roundState.currentVoterIndex++;
+                if (this.roundState.currentVoterIndex < this.players.length) {
+                    this.renderVoterTurn();
+                } else {
+                    this.processCinematicReveal();
+                }
+            },
+
+            processCinematicReveal() {
+                this.navigateTo('screen-cinematic');
+
+                let maxVotes = -1;
+                let votedOutIdx = 0;
+                for (let idx in this.roundState.votes) {
+                    if (this.roundState.votes[idx] > maxVotes) {
+                        maxVotes = this.roundState.votes[idx];
+                        votedOutIdx = parseInt(idx);
+                    }
+                }
+                this.roundState.votedOutIndex = votedOutIdx;
+
+                const namesBox = document.getElementById('sequential-names-box');
+                const card = document.getElementById('cinematic-card');
+                const suspenseTitle = document.getElementById('cinematic-suspense-title');
+                const status = document.getElementById('cinematic-status');
+                const continueBtn = document.getElementById('btn-cinematic-continue');
+
+                namesBox.style.display = 'flex';
+                card.style.display = 'none';
+                namesBox.innerHTML = '';
+                suspenseTitle.textContent = '🔍 لحظة الحقيقة - مراجعة الأسماء...';
+                status.textContent = '⏳ جاري تفقد أصوات المشاركين...';
+                continueBtn.style.display = 'none';
+
+                sound.suspense();
+
+                this.players.forEach((p, idx) => {
+                    setTimeout(() => {
+                        const nameCard = document.createElement('div');
+                        nameCard.className = 'sequential-name-card';
+                        nameCard.innerHTML = `<span style="font-size: 1.3rem;">${p.avatar}</span> <span>${escapeHTML(p.name)}</span>`;
+                        namesBox.appendChild(nameCard);
+                        setTimeout(() => nameCard.classList.add('show'), 50);
+                        sound.tick();
+                    }, idx * 400);
+                });
+
+                const totalSeqTime = this.players.length * 400 + 700;
+                setTimeout(() => {
+                    namesBox.style.display = 'none';
+                    card.style.display = 'flex';
+                    suspenseTitle.textContent = '💥 النتيجة النهائية للحسم';
+
+                    const realImposterPlayer = this.players[this.roundState.imposterIndex];
+                    document.getElementById('cinematic-avatar').textContent = realImposterPlayer.avatar;
+                    document.getElementById('cinematic-name').textContent = realImposterPlayer.name;
+                    sound.boom();
+
+                    setTimeout(() => {
+                        card.className = 'reveal-card revealed-imposter';
+                        if (votedOutIdx === this.roundState.imposterIndex) {
+                            document.getElementById('cinematic-badge').textContent = '💥 تم كشف الخائن ببراعة!';
+                            status.textContent = `🎉 صحيح! اللاعب ${realImposterPlayer.name} هو الخائن!`;
+                            sound.win();
+                        } else {
+                            const votedPlayer = this.players[votedOutIdx];
+                            document.getElementById('cinematic-badge').textContent = '😇 لاعب بريء!';
+                            status.textContent = `😱 لقد أخطأتم! ${votedPlayer.name} مظلوم.. الخائن الحقيقي هو ${realImposterPlayer.name}!`;
+                            sound.fail();
+                        }
+                        continueBtn.style.display = 'block';
+                    }, 1000);
+                }, totalSeqTime);
+            },
+
+            proceedAfterCinematic() {
+                sound.click();
+                if (this.roundState.votedOutIndex === this.roundState.imposterIndex) {
+                    this.prepareGuessPhase();
+                    this.navigateTo('screen-guess');
+                } else {
+                    this.calculateScoresAndShowResults(false, false);
+                }
+            },
+
+            prepareGuessPhase() {
+                const imposter = this.players[this.roundState.imposterIndex];
+                document.getElementById('guess-imposter-name').textContent = `يا ${escapeHTML(imposter.name)}! تم اقفشُك.. خمن الكلمة الصح لتكسب النقاط!`;
+
+                const catObj = CATEGORIES_DATA.find(c => c.id === this.selectedCategory) || CATEGORIES_DATA[0];
+                let choices = [this.roundState.secretWord];
+                while (choices.length < 4) {
+                    const randomW = catObj.words[Math.floor(Math.random() * catObj.words.length)];
+                    if (!choices.includes(randomW)) choices.push(randomW);
+                }
+                choices.sort(() => Math.random() - 0.5);
+
+                const container = document.getElementById('guess-options-container');
+                container.innerHTML = '';
+                this.roundState.selectedGuessWord = null;
+
+                choices.forEach(word => {
+                    const btn = document.createElement('div');
+                    btn.className = 'vote-btn';
+                    btn.innerHTML = `<span>${word}</span> <span>🧠</span>`;
+                    btn.onclick = () => {
+                        sound.click();
+                        document.querySelectorAll('#guess-options-container .vote-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        this.roundState.selectedGuessWord = word;
+                        document.getElementById('btn-submit-guess').style.display = 'block';
+                    };
+                    container.appendChild(btn);
+                });
+
+                document.getElementById('btn-submit-guess').style.display = 'none';
+            },
+
+            submitImposterGuess() {
+                sound.click();
+                const isCorrect = this.roundState.selectedGuessWord === this.roundState.secretWord;
+                this.calculateScoresAndShowResults(true, isCorrect);
+            },
+
+            calculateScoresAndShowResults(imposterCaught, imposterGuessedRight) {
+                const imposterIdx = this.roundState.imposterIndex;
+                if (imposterCaught) {
+                    if (imposterGuessedRight) {
+                        this.players[imposterIdx].score = (this.players[imposterIdx].score || 0) + 150;
+                    } else {
+                        this.players.forEach((p, idx) => {
+                            if (idx !== imposterIdx) p.score = (p.score || 0) + 100;
+                        });
+                    }
+                } else {
+                    this.players[imposterIdx].score = (this.players[imposterIdx].score || 0) + 200;
+                }
+
+                this.saveToStorage();
+                this.renderResultsScreen(imposterCaught, imposterGuessedRight);
+                this.navigateTo('screen-results');
+            },
+
+            renderResultsScreen(imposterCaught, imposterGuessedRight) {
+                const imposter = this.players[this.roundState.imposterIndex];
+                const summaryBox = document.getElementById('round-summary-box');
+
+                let htmlText = `
+                    <div style="font-size:1rem; font-weight:bold; color:#ffca28; margin-bottom:6px;">
+                        الكلمة السرية كانت: <span style="color:#00dfd8;">${this.roundState.secretWord}</span>
+                    </div>
+                    <div style="font-size:0.95rem; margin-bottom:4px;">
+                        الخائن الحقيقي كان: <strong>${imposter.avatar} ${escapeHTML(imposter.name)}</strong>
+                    </div>
+                `;
+
+                if (imposterCaught) {
+                    if (imposterGuessedRight) {
+                        htmlText += `<div style="color:#ffca28; font-weight:bold; font-size:0.9rem;">🔥 تم كشف الخائن، لكنه خمن الكلمة صح! (+150 نقطة)</div>`;
+                    } else {
+                        htmlText += `<div style="color:#4caf50; font-weight:bold; font-size:0.9rem;">🎉 عاش يا أبطال! اقفشتوه! (+100 نقطة للجميع)</div>`;
+                    }
+                } else {
+                    htmlText += `<div style="color:#ff007f; font-weight:bold; font-size:0.9rem;">😈 الخائن ضحك عليكم وخرج منتصراً! (+200 نقطة للخائن)</div>`;
+                }
+
+                summaryBox.innerHTML = htmlText;
+
+                const sorted = [...this.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+                const container = document.getElementById('leaderboard-container');
+                container.innerHTML = '';
+
+                sorted.forEach((p, rank) => {
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item';
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-weight:900; color:#ffca28; width:18px;">#${rank + 1}</span>
+                            <span style="font-size:1.2rem;">${p.avatar}</span>
+                            <span style="font-weight:bold;">${escapeHTML(p.name)}</span>
+                        </div>
+                        <div style="font-weight:900; color:#00dfd8;">${p.score || 0} نقطة</div>
+                    `;
+                    container.appendChild(item);
+                });
+            },
+
+            showStatsScreen() {
+                const sorted = [...this.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+                const container = document.getElementById('global-leaderboard-container');
+                container.innerHTML = ``;
+
+                sorted.forEach((p, rank) => {
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item';
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-weight:900; color:#ffca28; width:18px;">#${rank + 1}</span>
+                            <span style="font-size:1.2rem;">${p.avatar}</span>
+                            <span style="font-weight:bold;">${escapeHTML(p.name)}</span>
+                        </div>
+                        <div style="font-weight:900; color:#00dfd8;">${p.score || 0} نقطة</div>
+                    `;
+                    container.appendChild(item);
+                });
+
+                this.navigateTo('screen-stats');
+            },
+
+            toggleSound(val) {
+                sound.enabled = val;
+                this.saveToStorage();
+            },
+
+            toggleEffects(val) {
+                if (this.bgEngine) this.bgEngine.setActive(val);
+                this.saveToStorage();
+            },
+
+            resetScoresOnly() {
+                sound.click();
+                if (confirm("هل أنت متأكد من تصفير نقاط كل اللاعبين؟")) {
+                    this.players.forEach(p => p.score = 0);
+                    this.saveToStorage();
+                    this.renderPlayersList();
+                    alert("تم تصفير النقاط بنجاح!");
+                }
+            },
+
+            resetAllData() {
+                sound.click();
+                if (confirm("هل تريد مسح جميع البيانات والبدء بقائمة لاعبين فارغة تماماً؟")) {
+                    ['maro_pro_players', 'maro_pro_category', 'maro_pro_sound', 'maro_pro_effects']
+                        .forEach(key => localStorage.removeItem(key));
+                    location.reload();
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>
